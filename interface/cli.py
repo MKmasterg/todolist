@@ -57,9 +57,9 @@ def _handle_add_command(args: List[str]) -> None:
 
     resource = args[0]
     if resource == "project":
-        print("Please enter project name (30-150 characters):\n")
+        print("Please enter project name (30-150 characters):")
         name = input().strip()
-        print("Please enter project description (optional, 30-150 characters):\n")
+        print("Please enter project description (optional, 30-150 characters):")
         description = input().strip()
 
         try:
@@ -71,20 +71,20 @@ def _handle_add_command(args: List[str]) -> None:
         print_info(f"Add project: {name}")
 
     elif resource == "task":
-        print("Please enter project name to add task to:\n")
+        print("Please enter project name to add task to:")
         project_name = input().strip()
         selected_project = get_project_from_name(project_name)
         if not selected_project:
             print_error(f"Project '{project_name}' not found")
             return
 
-        print("Please enter task title (30-150 characters):\n")
+        print("Please enter task title (30-150 characters):")
         title = input().strip()
-        print("Please enter task description (optional, 30-150 characters):\n")
+        print("Please enter task description (optional, 30-150 characters):")
         description = input().strip()
-        print("Please enter task status (todo, doing, done) [default: todo]:\n")
+        print("Please enter task status (todo, doing, done) [default: todo]:")
         status = input().strip() or "todo"
-        print("Please enter task deadline (YYYY-MM-DD) [optional]:\n")
+        print("Please enter task deadline (YYYY-MM-DD) [optional]:")
         deadline_input = input().strip()
 
         try:
@@ -159,13 +159,13 @@ def _handle_update_command(args: List[str]) -> None:
             print_error(f"Error finding task: {str(e)}")
             return
 
-        print("Please enter new task name [leave blank if want unchanged]:\n")
+        print("Please enter new task name [leave blank if want unchanged]:")
         new_name = input().strip()
-        print("Please enter new task description [leave blank if want unchanged]:\n")
+        print("Please enter new task description [leave blank if want unchanged]:")
         new_description = input().strip()
-        print("Please enter new task status (todo, doing, done) [leave blank if want unchanged]:\n")
+        print("Please enter new task status (todo, doing, done) [leave blank if want unchanged]:")
         new_status = input().strip()
-        print("Please enter new task deadline (YYYY-MM-DD) [leave blank if want unchanged]:\n")
+        print("Please enter new task deadline (YYYY-MM-DD) [leave blank if want unchanged]:")
         new_deadline = input().strip()
 
         try:
@@ -221,9 +221,9 @@ def _handle_update_command(args: List[str]) -> None:
             print_error(f"Error finding project: {str(e)}")
             return
 
-        print("Please enter new project name [leave blank if want unchanged]:\n")
+        print("Please enter new project name [leave blank if want unchanged]:")
         new_name = input().strip()
-        print("Please enter new project description [leave blank if want unchanged]:\n")
+        print("Please enter new project description [leave blank if want unchanged]:")
         new_description = input().strip()
 
         try:
@@ -260,7 +260,10 @@ def _handle_get_projects() -> None:
 
         print_success(f"Found {len(projects)} project(s):")
         for idx, project in enumerate(projects, 1):
-            print(f"  {idx}. {project}")
+            print(f"  {idx}. {project.name} - {project.description}")
+            tasks = get_project_tasks(project)
+            print(f"     Tasks: {len(tasks)}")
+            print("     " + "-" * 40)
 
     except Exception as e:
         print_error(f"Error retrieving projects: {str(e)}")
@@ -286,8 +289,12 @@ def _handle_get_tasks(project_name: str) -> Optional[List]:
             return None
 
         print_success(f"Tasks in project '{project_name}':")
-        for idx, task in enumerate(tasks, 1):
-            print(f"  {idx}. {task}")
+        for _, task in enumerate(tasks, 1):
+            print(f"  {task.uuid}. {task.title} - {task.status}")
+            if task.deadline:
+                print(f"     Deadline: {task.deadline}")
+            print(f"     Description: {task.description}")
+            print("     " + "-" * 40)
 
         return tasks
     except Exception as e:
