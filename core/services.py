@@ -11,6 +11,14 @@ from core.models import Project, Status, Task
 from datetime import datetime
 
 
+def get_project_from_name(name: str) -> Optional[Project]:
+    """Retrieve a project by its name.
+    :param name: The project name to search for.
+    :return: The Project instance if found, None otherwise.
+    """
+    return get_project(name)
+
+
 def is_project_name_existing(name: str) -> bool:
     """Check if a project name already exists in the database.
     :param name: The project name to check.
@@ -20,11 +28,13 @@ def is_project_name_existing(name: str) -> bool:
     return get_project(name) is not None
 
 
-def create_project(project: Project) -> bool:
+def create_project(name: str, desc: str) -> bool:
     """Create a new project in the database.
-    :param project: The Project instance to create.
+    :param name: The Project name.
+    :param desc: The Project description.
     :return: True if the project was created successfully.
     """
+    project = Project(name=name, description=desc)
     add_project(project)
     return True
 
@@ -48,6 +58,15 @@ def delete_project(project: Project) -> bool:
     """
     db_delete_project(project.name)
     return True
+
+
+def get_task_by_uuid_in_project(project_name: str, task_uuid: str) -> Optional[Task]:
+    """Retrieve a task by its UUID within a specific project.
+    :param project_name: The name of the project containing the task.
+    :param task_uuid: The UUID of the task to search for.
+    :return: The Task instance if found, None otherwise.
+    """
+    return get_task_by_uuid(project_name, task_uuid)
 
 
 def add_task_to_project(project: Project, title: str, description: str = "", status: str = Status.TODO,

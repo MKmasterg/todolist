@@ -23,7 +23,8 @@ class Task:
     """Represents a task with title, description, status, and deadline."""
     task_count = 0
 
-    def __init__(self, title: str, description: str = "", status: str = Status.TODO, deadline: Optional[datetime] = None):
+    def __init__(self, title: str, description: str = "", status: str = Status.TODO,
+                 deadline: Optional[datetime | str] = None):
         """
         Initialize a new Task instance.
 
@@ -50,6 +51,24 @@ class Task:
             self.deadline = deadline
             Task.task_count += 1
 
+    def set_title(self, new_title: str):
+        """
+        Update the task title.
+
+        :param new_title: New task title (must be between 30 and 150 words)
+        """
+        if validate_task_title(new_title):
+            self.title = new_title
+
+    def set_description(self, new_description: str):
+        """
+        Update the task description.
+
+        :param new_description: New task description (must be between 30 and 150 words)
+        """
+        if validate_task_description(new_description):
+            self.description = new_description
+
     def set_status(self, new_status: str):
         """
         Update the task status.
@@ -59,7 +78,7 @@ class Task:
         if validate_task_status(new_status):
             self.status = new_status
 
-    def set_deadline(self, new_deadline: Optional[datetime]):
+    def set_deadline(self, new_deadline: datetime | str):
         """
         Update the task deadline.
 
@@ -83,3 +102,21 @@ class Project:
             self.name = name
             self.description = description
             Project.project_count += 1
+
+    def set_name(self, new_name: str):
+        """
+        Update the project name.
+
+        :param new_name: New project name (must be between 30 and 150 characters)
+        """
+        if validate_project_name(new_name):
+            self.name = new_name
+
+    def set_description(self, new_description: str):
+        """
+        Update the project description.
+
+        :param new_description: New project description (must be between 30 and 150 characters)
+        """
+        if validate_project_description(new_description):
+            self.description = new_description

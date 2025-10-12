@@ -18,7 +18,12 @@ def add_project(project: Project) -> None:
 
 
 def get_project(name: str) -> Optional[Project]:
-    return projects_db.get(name, None)
+    project = projects_db.get(name, None)
+
+    if project is None:
+        raise ProjectNotFoundError(f"Project with name '{name}' not found.")
+
+    return project
 
 
 def get_projects() -> List[Project]:

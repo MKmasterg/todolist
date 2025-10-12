@@ -68,7 +68,7 @@ def validate_task_status(status: str) -> bool:
     return True
 
 
-def validate_task_deadline(deadline) -> bool:
+def validate_task_deadline(deadline: datetime | str) -> bool:
     """Validate the task deadline to ensure it is a valid date.
     :param deadline: The task deadline to validate (can be string, datetime, or None).
     :return: True if valid, raise an exception if invalid.
