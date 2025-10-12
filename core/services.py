@@ -30,15 +30,14 @@ def create_project(name: str, desc: str) -> bool:
     return True
 
 
-def update_project(old_project: Project, new_name: str, new_desc: str) -> bool:
+def update_project(old_name: str, updated_project: Project) -> bool:
     """Update an existing project in the database.
-    :param old_project: The existing Project instance to update.
-    :param new_name: The new Project name.
-    :param new_desc: The new Project description.
+    :param old_name: The current name of the project to update.
+    :param updated_project: The Project instance with updated details.
     :return: True if the project was updated successfully.
     """
-    new_project = Project(name=new_name, description=new_desc)
-    update_project_name(old_project.name, new_project.name)
+
+    update_project_name(old_name, updated_project)
     return True
 
 

@@ -40,15 +40,14 @@ def get_projects() -> List[Project]:
     return list(projects_db.values())
 
 
-def update_project_name(old_name: str, new_name: str) -> None:
+def update_project_name(old_name: str, updated_project:Project) -> None:
     project: Project = projects_db.pop(old_name, None)
 
     if project is None:
         raise ProjectNotFoundError(f"Project with name '{old_name}' not found.")
 
-    project.name = new_name
-    projects_db[new_name] = project
-    tasks_db[new_name] = tasks_db.pop(old_name)
+    projects_db[updated_project.name] = updated_project
+    tasks_db[updated_project.name] = tasks_db.pop(old_name)
 
 
 def delete_project(name: str) -> None:

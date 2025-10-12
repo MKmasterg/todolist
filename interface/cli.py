@@ -73,9 +73,10 @@ def _handle_add_command(args: List[str]) -> None:
     elif resource == "task":
         print("Please enter project name to add task to:")
         project_name = input().strip()
-        selected_project = get_project_from_name(project_name)
-        if not selected_project:
-            print_error(f"Project '{project_name}' not found")
+        try:
+            selected_project = get_project_from_name(project_name)
+        except Exception as e:
+            print_error(f"Error finding project: {str(e)}")
             return
 
         print("Please enter task title (30-150 characters):")
@@ -94,7 +95,7 @@ def _handle_add_command(args: List[str]) -> None:
             print_error(f"Error adding task: {str(e)}")
             return
 
-        print_info(f"Add task to project {args[1]}: {args[2]}")
+        print_info(f"Add task to project {title}: {project_name}")
     else:
         print_error(f"Unknown resource: {resource}")
 
@@ -225,15 +226,14 @@ def _handle_update_command(args: List[str]) -> None:
         new_name = input().strip()
         print("Please enter new project description [leave blank if want unchanged]:")
         new_description = input().strip()
-
+        old_name = project.name
         try:
             if new_name:
                 project.set_name(new_name)
             if new_description:
                 project.set_description(new_description)
 
-            update_project(project, new_name if new_name else project.name,
-                           new_description if new_description else project.description)
+            update_project(old_name, project)
 
         except Exception as e:
             print_error(f"Error updating project: {str(e)}")
@@ -332,11 +332,6 @@ Todo List CLI - Available Commands:
   update task_status <proj> <id> <status> - Update a task's status
   update project <name>                   - Update a project's name or description
   help                                    - Show this help message
-
-Examples:
-  get projects
-  get tasks MyProject
-  add project "New Project"
-  add task MyProject "Buy groceries"
+  exit                                    - Exit the CLI
 """
     print(help_text)
