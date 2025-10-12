@@ -16,3 +16,28 @@ class DuplicateProjectNameError(Exception):
 class MaxProjectsReachedError(Exception):
     """Custom exception for reaching the maximum number of projects."""
     pass
+
+
+class InvalidTaskTitleSizeError(Exception):
+    """Custom exception for invalid task title size."""
+    pass
+
+
+class InvalidTaskDescriptionSizeError(Exception):
+    """Custom exception for invalid task description size."""
+    pass
+
+
+class InvalidTaskStatusError(Exception):
+    """Custom exception for invalid task status."""
+    pass
+
+
+class InvalidTaskDeadlineError(Exception):
+    """Custom exception for invalid task deadline."""
+    pass
+
+
+class MaxTasksReachedError(Exception):
+    """Custom exception for reaching the maximum number of tasks."""
+    pass
