@@ -37,7 +37,7 @@ def _handle_get_command(args: List[str]) -> None:
         print_error("No resource specified for 'get' command")
         return
 
-    resource = args[0]
+    resource = args[0].lower()
     if resource == "projects":
         _handle_get_projects()
     elif resource == "tasks":
@@ -55,7 +55,7 @@ def _handle_add_command(args: List[str]) -> None:
         print_error("No resource specified for 'add' command")
         return
 
-    resource = args[0]
+    resource = args[0].lower()
     if resource == "project":
         print("Please enter project name (at most 30 characters):")
         name = input().strip()
@@ -108,15 +108,15 @@ def _handle_delete_command(args: List[str]) -> None:
         print_error("No resource specified for 'delete' command")
         return
 
-    resource = args[0]
+    resource = args[0].lower()
     if resource == "project":
         if len(args) < 2:
             print_error("Project name required")
             return
-
-        project = get_project_from_name(args[1])
-        if not project:
-            print_error(f"Project '{args[1]}' not found")
+        try:
+            project = get_project_from_name(args[1])  # Verify project exists
+        except Exception as e:
+            print_error(f"Error finding project: {str(e)}")
             return
 
         try:
@@ -152,7 +152,7 @@ def _handle_update_command(args: List[str]) -> None:
         print_error("No resource specified for 'update' command")
         return
 
-    resource = args[0]
+    resource = args[0].lower()
     if resource == "task":
         if len(args) < 3:
             print_error("Project name and task ID required")
