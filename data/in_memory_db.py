@@ -21,6 +21,10 @@ def get_project(name: str) -> Optional[Project]:
     return projects_db.get(name, None)
 
 
+def get_projects() -> List[Project]:
+    return list(projects_db.values())
+
+
 def update_project_name(old_name: str, new_name: str) -> None:
     project: Project = projects_db.pop(old_name, None)
 

@@ -2,7 +2,8 @@ from typing import Optional, List
 
 from data.in_memory_db import (
     add_project, get_project, update_project_name, delete_project as db_delete_project,
-    add_task, get_tasks, get_task_by_uuid, update_task_by_uuid, delete_task_by_uuid
+    add_task, get_tasks, get_task_by_uuid, update_task_by_uuid, delete_task_by_uuid,
+    get_projects
 )
 
 from core.models import Project, Status, Task
@@ -110,6 +111,15 @@ def delete_task_from_project(project: Project, task_uuid: str) -> bool:
     """
     delete_task_by_uuid(project.name, task_uuid)
     return True
+
+
+def get_project_list() -> List[Project]:
+    """
+    Get all projects.
+
+    :return: List of all projects.
+    """
+    return get_projects()
 
 
 def get_project_tasks(project: Project) -> List[Task]:
