@@ -1,0 +1,335 @@
+from typing import List, Optional
+
+from core.services import (get_project_list, get_project_tasks, create_project, get_project_from_name,
+                           add_task_to_project, delete_project, get_task_by_uuid_in_project, delete_task_from_project,
+                           update_task_elements, update_project)
+
+
+def handle_command(command: str, args: List[str]) -> None:
+    """
+    Handle CLI commands.
+
+    :param command: The command to execute (e.g., 'get', 'add', 'delete')
+    :param args: List of arguments for the command
+    """
+    if not command:
+        print_error("No command provided")
+        return
+
+    if command == "get":
+        _handle_get_command(args)
+    elif command == "add":
+        _handle_add_command(args)
+    elif command == "delete":
+        _handle_delete_command(args)
+    elif command == "update":
+        _handle_update_command(args)
+    elif command == "help":
+        print_help()
+    else:
+        print_error(f"Unknown command: {command}")
+        print_help()
+
+
+def _handle_get_command(args: List[str]) -> None:
+    """Handle 'get' commands."""
+    if not args:
+        print_error("No resource specified for 'get' command")
+        return
+
+    resource = args[0]
+    if resource == "projects":
+        _handle_get_projects()
+    elif resource == "tasks":
+        if len(args) < 2:
+            print_error("Project name required for 'get tasks' command")
+            return
+        _handle_get_tasks(args[1])
+    else:
+        print_error(f"Unknown resource: {resource}")
+
+
+def _handle_add_command(args: List[str]) -> None:
+    """Handle 'add' commands."""
+    if not args:
+        print_error("No resource specified for 'add' command")
+        return
+
+    resource = args[0]
+    if resource == "project":
+        print("Please enter project name (30-150 characters):\n")
+        name = input().strip()
+        print("Please enter project description (optional, 30-150 characters):\n")
+        description = input().strip()
+
+        try:
+            create_project(name=name, desc=description)
+        except Exception as e:
+            print_error(f"Error creating project: {str(e)}")
+            return
+
+        print_info(f"Add project: {name}")
+
+    elif resource == "task":
+        print("Please enter project name to add task to:\n")
+        project_name = input().strip()
+        selected_project = get_project_from_name(project_name)
+        if not selected_project:
+            print_error(f"Project '{project_name}' not found")
+            return
+
+        print("Please enter task title (30-150 characters):\n")
+        title = input().strip()
+        print("Please enter task description (optional, 30-150 characters):\n")
+        description = input().strip()
+        print("Please enter task status (todo, doing, done) [default: todo]:\n")
+        status = input().strip() or "todo"
+        print("Please enter task deadline (YYYY-MM-DD) [optional]:\n")
+        deadline_input = input().strip()
+
+        try:
+            add_task_to_project(selected_project, title=title, description=description, status=status,
+                                deadline=deadline_input if deadline_input else None)
+        except Exception as e:
+            print_error(f"Error adding task: {str(e)}")
+            return
+
+        print_info(f"Add task to project {args[1]}: {args[2]}")
+    else:
+        print_error(f"Unknown resource: {resource}")
+
+
+def _handle_delete_command(args: List[str]) -> None:
+    """Handle 'delete' commands."""
+    if not args:
+        print_error("No resource specified for 'delete' command")
+        return
+
+    resource = args[0]
+    if resource == "project":
+        if len(args) < 2:
+            print_error("Project name required")
+            return
+
+        project = get_project_from_name(args[1])
+        if not project:
+            print_error(f"Project '{args[1]}' not found")
+            return
+
+        try:
+            delete_project(project)
+        except Exception as e:
+            print_error(f"Error deleting project: {str(e)}")
+            return
+
+        print_info(f"Delete project: {args[1]}")
+
+    elif resource == "task":
+        if len(args) < 3:
+            print_error("Project name and task ID required")
+            return
+        try:
+            get_task_by_uuid_in_project(args[1], args[2])  # Verify task exists
+        except Exception as e:
+            print_error(f"Error finding task: {str(e)}")
+            return
+
+        delete_task_from_project(get_project_from_name(args[1]), args[2])
+
+        print_info(f"Delete task {args[2]} from project {args[1]}")
+    else:
+        print_error(f"Unknown resource: {resource}")
+
+
+def _handle_update_command(args: List[str]) -> None:
+    """Handle 'update' commands."""
+    if not args:
+        print_error("No resource specified for 'update' command")
+        return
+
+    resource = args[0]
+    if resource == "task":
+        if len(args) < 3:
+            print_error("Project name and task ID required")
+            return
+        try:
+            task = get_task_by_uuid_in_project(args[1], args[2])  # Verify task exists
+            project = get_project_from_name(args[1])
+        except Exception as e:
+            print_error(f"Error finding task: {str(e)}")
+            return
+
+        print("Please enter new task name [leave blank if want unchanged]:\n")
+        new_name = input().strip()
+        print("Please enter new task description [leave blank if want unchanged]:\n")
+        new_description = input().strip()
+        print("Please enter new task status (todo, doing, done) [leave blank if want unchanged]:\n")
+        new_status = input().strip()
+        print("Please enter new task deadline (YYYY-MM-DD) [leave blank if want unchanged]:\n")
+        new_deadline = input().strip()
+
+        try:
+            if new_name:
+                task.set_title(new_name)
+            if new_description:
+                task.set_description(new_description)
+            if new_status:
+                task.set_status(new_status)
+            if new_deadline:
+                task.set_deadline(new_deadline)
+        except Exception as e:
+            print_error(f"Error updating task: {str(e)}")
+            return
+
+        # Update the task in the project
+        try:
+            update_task_elements(project, args[2], task.title, task.description, task.status, task.deadline)
+        except Exception as e:
+            print_error(f"Error saving updated task: {str(e)}")
+            return
+
+        print_info(f"Update task {args[2]} in project {args[1]}")
+
+    if resource == "task_status":
+        if len(args) < 4:
+            print_error("Project name, task ID, and new status required")
+            return
+        try:
+            project = get_project_from_name(args[1])
+            task = get_task_by_uuid_in_project(args[1], args[2])  # Verify task exists
+            new_status = args[3]
+        except Exception as e:
+            print_error(f"Error finding task or validating status: {str(e)}")
+            return
+
+        try:
+            task.set_status(new_status)
+            update_task_elements(project, args[2], task.title, task.description, task.status, task.deadline)
+        except Exception as e:
+            print_error(f"Error updating task status: {str(e)}")
+            return
+
+        print_info(f"Update task {args[2]} status in project {args[1]} to {new_status}")
+
+    if resource == "project":
+        if len(args) < 2:
+            print_error("Project name required")
+            return
+        try:
+            project = get_project_from_name(args[1])
+        except Exception as e:
+            print_error(f"Error finding project: {str(e)}")
+            return
+
+        print("Please enter new project name [leave blank if want unchanged]:\n")
+        new_name = input().strip()
+        print("Please enter new project description [leave blank if want unchanged]:\n")
+        new_description = input().strip()
+
+        try:
+            if new_name:
+                project.set_name(new_name)
+            if new_description:
+                project.set_description(new_description)
+
+            update_project(project, new_name if new_name else project.name,
+                           new_description if new_description else project.description)
+
+        except Exception as e:
+            print_error(f"Error updating project: {str(e)}")
+            return
+
+        print_info(f"Update project: {args[1]}")
+
+    else:
+        print_error(f"Unknown resource: {resource}")
+
+
+def _handle_get_projects() -> None:
+    """
+    Retrieve and display all projects.
+
+    Returns:
+        List of projects or None if no projects exist
+    """
+    try:
+        projects = get_project_list()
+        if not projects:
+            print_info("No projects found")
+            return None
+
+        print_success(f"Found {len(projects)} project(s):")
+        for idx, project in enumerate(projects, 1):
+            print(f"  {idx}. {project}")
+
+    except Exception as e:
+        print_error(f"Error retrieving projects: {str(e)}")
+        return None
+
+
+def _handle_get_tasks(project_name: str) -> Optional[List]:
+    """
+    Retrieve and display tasks for a specific project.
+
+    Args:
+        project_name: Name of the project
+
+    Returns:
+        List of tasks or None if no tasks exist
+    """
+    try:
+        project = get_project_from_name(project_name)
+        tasks = get_project_tasks(project)
+
+        if not tasks:
+            print_info(f"No tasks found for project '{project_name}'")
+            return None
+
+        print_success(f"Tasks in project '{project_name}':")
+        for idx, task in enumerate(tasks, 1):
+            print(f"  {idx}. {task}")
+
+        return tasks
+    except Exception as e:
+        print_error(f"Error retrieving tasks: {str(e)}")
+        return None
+
+
+def print_success(message: str) -> None:
+    """Print a success message."""
+    print(f"✓ {message}")
+
+
+def print_error(message: str) -> None:
+    """Print an error message."""
+    print(f"✗ Error: {message}")
+
+
+def print_info(message: str) -> None:
+    """Print an informational message."""
+    print(f"ℹ {message}")
+
+
+def print_help() -> None:
+    """Display help information about available commands."""
+    help_text = """
+Todo List CLI - Available Commands:
+
+  get projects                            - List all projects
+  get tasks <project>                     - List all tasks in a project
+  add project                             - Add a new project
+  add task                                - Add a new task to a project
+  delete project <name>                   - Delete a project
+  delete task <project> <id>              - Delete a task from a project
+  update task <proj> <id>                 - Update a task in a project
+  update task_status <proj> <id> <status> - Update a task's status
+  update project <name>                   - Update a project's name or description
+  help                                    - Show this help message
+
+Examples:
+  get projects
+  get tasks MyProject
+  add project "New Project"
+  add task MyProject "Buy groceries"
+"""
+    print(help_text)
