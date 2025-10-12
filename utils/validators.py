@@ -8,8 +8,8 @@ def validate_project_name(name: str) -> bool:
     :param name: The project name to validate.
     :return: True if valid, raise an exception if invalid.
     """
-    if not (30 <= len(name.split()) <= 150):
-        raise InvalidProjectNameSizeError("Project name must be between 30 and 150 characters.")
+    if not (30 >= len(name.split()) and len(name) > 0):
+        raise InvalidProjectNameSizeError("Project name must be at most 30 characters and not empty.")
 
     return True
 
@@ -19,8 +19,8 @@ def validate_project_description(description: str) -> bool:
     :param description: The project description to validate.
     :return: True if valid, raise an exception if invalid.
     """
-    if description and not (30 <= len(description.split()) <= 150):
-        raise InvalidProjectDescriptionSizeError("Project description must be between 30 and 150 characters.")
+    if description and not (len(description.split()) <= 150 and len(description) > 0):
+        raise InvalidProjectDescriptionSizeError("Project description must be at most 150 characters and not empty.")
 
     return True
 
@@ -31,8 +31,8 @@ def validate_task_title(title: str) -> bool:
     :return: True if valid, raise an exception if invalid.
     """
     word_count = len(title.split())
-    if not (30 <= word_count <= 150):
-        raise InvalidTaskTitleSizeError("Task title must be at least 30 words and at most 150 words.")
+    if not (30 >= word_count > 0):
+        raise InvalidTaskTitleSizeError("Task title must be at most 30 words and not empty.")
 
     return True
 
@@ -44,8 +44,8 @@ def validate_task_description(description: str) -> bool:
     """
     if description:
         word_count = len(description.split())
-        if not (30 <= word_count <= 150):
-            raise InvalidTaskDescriptionSizeError("Task description must be at least 30 words and at most 150 words.")
+        if not (0 < word_count <= 150):
+            raise InvalidTaskDescriptionSizeError("Task description must be at most 150 words and not empty.")
 
     return True
 
