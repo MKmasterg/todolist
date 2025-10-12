@@ -1,7 +1,5 @@
 from core.exceptions import *
 
-from core.services import is_project_name_existing
-
 from datetime import datetime
 
 
@@ -12,10 +10,6 @@ def validate_project_name(name: str) -> bool:
     """
     if not (30 <= len(name.split()) <= 150):
         raise InvalidProjectNameSizeError("Project name must be between 30 and 150 characters.")
-
-    # Check if the name is duplicated
-    if is_project_name_existing(name):
-        raise DuplicateProjectNameError(f"Project name '{name}' already exists.")
 
     return True
 

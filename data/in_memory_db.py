@@ -1,7 +1,7 @@
 """
 In-memory database for projects and tasks.
 """
-from core.exceptions import ProjectNotFoundError, TaskNotFoundError
+from core.exceptions import ProjectNotFoundError, TaskNotFoundError, DuplicateProjectNameError
 
 from typing import Dict, List, Optional
 
@@ -12,7 +12,17 @@ projects_db: Dict[str, Project] = {}
 tasks_db: Dict[str, List[Task]] = {}  # key: project name, value: list of tasks
 
 
+def is_project_name_existing(name: str) -> bool:
+    """Check if a project name already exists in the database.
+    :param name: The project name to check.
+    :return: True if the name exists, False otherwise.
+    """
+    return name in projects_db
+
+
 def add_project(project: Project) -> None:
+    if is_project_name_existing(project.name):
+        raise DuplicateProjectNameError(f"Project with name '{project.name}' already exists.")
     projects_db[project.name] = project
     tasks_db[project.name] = []
 

@@ -19,15 +19,6 @@ def get_project_from_name(name: str) -> Optional[Project]:
     return get_project(name)
 
 
-def is_project_name_existing(name: str) -> bool:
-    """Check if a project name already exists in the database.
-    :param name: The project name to check.
-    :return: True if the name exists, False otherwise.
-    """
-
-    return get_project(name) is not None
-
-
 def create_project(name: str, desc: str) -> bool:
     """Create a new project in the database.
     :param name: The Project name.
