@@ -9,7 +9,7 @@ from datetime import datetime
 
 from typing import Optional
 
-import uuid
+from utils.id_generator import tiny_id
 
 
 class Status:
@@ -44,7 +44,7 @@ class Task:
         is_deadline_valid = validate_task_deadline(deadline)
 
         if is_title_valid and is_desc_valid and is_status_valid and is_deadline_valid:
-            self.uuid = str(uuid.uuid4())
+            self.uuid = tiny_id()
             self.title = title
             self.description = description
             self.status = status
