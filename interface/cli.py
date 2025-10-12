@@ -1,3 +1,4 @@
+from copy import copy
 from typing import List, Optional
 
 from core.services import (get_project_list, get_project_tasks, create_project, get_project_from_name,
@@ -173,22 +174,24 @@ def _handle_update_command(args: List[str]) -> None:
         print("Please enter new task deadline (YYYY-MM-DD) [leave blank if want unchanged]:")
         new_deadline = input().strip()
 
+        new_task = copy(task)
+
         try:
             if new_name:
-                task.set_title(new_name)
+                new_task.set_title(new_name)
             if new_description:
-                task.set_description(new_description)
+                new_task.set_description(new_description)
             if new_status:
-                task.set_status(new_status)
+                new_task.set_status(new_status)
             if new_deadline:
-                task.set_deadline(new_deadline)
+                new_task.set_deadline(new_deadline)
         except Exception as e:
             print_error(f"Error updating task: {str(e)}")
             return
 
         # Update the task in the project
         try:
-            update_task_elements(project, args[2], task.title, task.description, task.status, task.deadline)
+            update_task_elements(project, args[2], new_task.title, new_task.description, new_task.status, new_task.deadline)
         except Exception as e:
             print_error(f"Error saving updated task: {str(e)}")
             return

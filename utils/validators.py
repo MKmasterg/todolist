@@ -70,14 +70,19 @@ def validate_task_deadline(deadline: datetime | str) -> bool:
     if deadline is None:
         return True
 
+    now = datetime.now()
     # If it's already a datetime object, it's valid
     if isinstance(deadline, datetime):
+        if deadline < now:
+            raise InvalidTaskDeadlineError("Task deadline must be a future date.")
         return True
 
     # If it's a string, try to parse it
     if isinstance(deadline, str):
         try:
-            datetime.fromisoformat(deadline.replace('Z', '+00:00'))
+            date = datetime.fromisoformat(deadline.replace('Z', '+00:00'))
+            if date < now:
+                raise InvalidTaskDeadlineError("Task deadline must be a future date.")
             return True
         except ValueError:
             raise InvalidTaskDeadlineError("Task deadline must be a valid date format (ISO 8601).")
