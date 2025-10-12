@@ -41,3 +41,7 @@ class InvalidTaskDeadlineError(Exception):
 class MaxTasksReachedError(Exception):
     """Custom exception for reaching the maximum number of tasks."""
     pass
+
+class ProjectNotFoundError(Exception):
+    """Custom exception for when a project is not found in the database."""
+    pass
