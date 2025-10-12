@@ -57,9 +57,9 @@ def _handle_add_command(args: List[str]) -> None:
 
     resource = args[0]
     if resource == "project":
-        print("Please enter project name (30-150 characters):")
+        print("Please enter project name (at most 30 characters):")
         name = input().strip()
-        print("Please enter project description (optional, 30-150 characters):")
+        print("Please enter project description (optional, at most 150 characters):")
         description = input().strip()
 
         try:
@@ -79,9 +79,9 @@ def _handle_add_command(args: List[str]) -> None:
             print_error(f"Error finding project: {str(e)}")
             return
 
-        print("Please enter task title (30-150 characters):")
+        print("Please enter task title (at most 30 characters):")
         title = input().strip()
-        print("Please enter task description (optional, 30-150 characters):")
+        print("Please enter task description (optional, at most 150 characters):")
         description = input().strip()
         print("Please enter task status (todo, doing, done) [default: todo]:")
         status = input().strip() or "todo"
@@ -101,7 +101,9 @@ def _handle_add_command(args: List[str]) -> None:
 
 
 def _handle_delete_command(args: List[str]) -> None:
-    """Handle 'delete' commands."""
+    """Handle 'delete' commands.
+    :param args: List of arguments for the delete command
+    """
     if not args:
         print_error("No resource specified for 'delete' command")
         return
@@ -143,7 +145,9 @@ def _handle_delete_command(args: List[str]) -> None:
 
 
 def _handle_update_command(args: List[str]) -> None:
-    """Handle 'update' commands."""
+    """Handle 'update' commands.
+    :param args: List of arguments for the update command
+    """
     if not args:
         print_error("No resource specified for 'update' command")
         return
@@ -248,9 +252,6 @@ def _handle_update_command(args: List[str]) -> None:
 def _handle_get_projects() -> None:
     """
     Retrieve and display all projects.
-
-    Returns:
-        List of projects or None if no projects exist
     """
     try:
         projects = get_project_list()
@@ -273,12 +274,8 @@ def _handle_get_projects() -> None:
 def _handle_get_tasks(project_name: str) -> Optional[List]:
     """
     Retrieve and display tasks for a specific project.
-
-    Args:
-        project_name: Name of the project
-
-    Returns:
-        List of tasks or None if no tasks exist
+    :param project_name: The name of the project to retrieve tasks from.
+    :return: List of tasks if successful, None otherwise.
     """
     try:
         project = get_project_from_name(project_name)
@@ -303,17 +300,23 @@ def _handle_get_tasks(project_name: str) -> Optional[List]:
 
 
 def print_success(message: str) -> None:
-    """Print a success message."""
+    """Print a success message.
+    :param message: The success message to print.
+    """
     print(f"✓ {message}")
 
 
 def print_error(message: str) -> None:
-    """Print an error message."""
+    """Print an error message.
+    :param message: The error message to print.
+    """
     print(f"✗ Error: {message}")
 
 
 def print_info(message: str) -> None:
-    """Print an informational message."""
+    """Print an informational message.
+    :param message: The informational message to print.
+    """
     print(f"ℹ {message}")
 
 
