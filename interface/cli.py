@@ -328,16 +328,16 @@ def print_help() -> None:
     help_text = """
 Todo List CLI - Available Commands:
 
-  get projects                            - List all projects
-  get tasks <project>                     - List all tasks in a project
-  add project                             - Add a new project
-  add task                                - Add a new task to a project
-  delete project <name>                   - Delete a project
-  delete task <project> <id>              - Delete a task from a project
-  update task <proj> <id>                 - Update a task in a project
-  update task_status <proj> <id> <status> - Update a task's status
-  update project <name>                   - Update a project's name or description
-  help                                    - Show this help message
-  exit                                    - Exit the CLI
+  get projects                                 - List all projects
+  get tasks "<project>"                        - List all tasks in a project
+  add project                                  - Add a new project
+  add task                                     - Add a new task to a project
+  delete project "<name>"                      - Delete a project
+  delete task "<project>" <id>                 - Delete a task from a project
+  update task "<project>" <id>                 - Update a task in a project
+  update task_status "<project>" <id> <status> - Update a task's status
+  update project "<name>"                      - Update a project's name or description
+  help                                         - Show this help message
+  exit                                         - Exit the CLI
 """
     print(help_text)

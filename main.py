@@ -1,4 +1,5 @@
 from interface.cli import handle_command, print_help
+from interface.arg_parser import parse_args
 
 
 def main():
@@ -7,8 +8,9 @@ def main():
     print("> ", end=" ")
     user_input = input().strip()
     while user_input.lower() != "exit":
-        parsed_input = user_input.split()
-        handle_command(parsed_input[0].lower(), parsed_input[1:])
+        parsed_input = parse_args(user_input)
+        if parsed_input:
+            handle_command(parsed_input[0].lower(), parsed_input[1:])
         print("> ", end=" ")
         user_input = input().strip()
 
