@@ -26,10 +26,10 @@ def add_project(project: Project) -> None:
     :param project:
     :return:
     """
-    if is_project_name_existing(project.name):
-        raise DuplicateProjectNameError(f"Project with name '{project.name}' already exists.")
-    projects_db[project.name] = project
-    tasks_db[project.name] = []
+    if is_project_name_existing(project.get_name()):
+        raise DuplicateProjectNameError(f"Project with name '{project.get_name()}' already exists.")
+    projects_db[project.get_name()] = project
+    tasks_db[project.get_name()] = []
 
 
 def get_project(name: str) -> Optional[Project]:
@@ -65,9 +65,9 @@ def update_project_name(old_name: str, updated_project:Project) -> None:
 
     if project is None:
         raise ProjectNotFoundError(f"Project with name '{old_name}' not found.")
-
-    projects_db[updated_project.name] = updated_project
-    tasks_db[updated_project.name] = tasks_db.pop(old_name)
+    
+    projects_db[updated_project.get_name()] = updated_project
+    tasks_db[updated_project.get_name()] = tasks_db.pop(old_name)
 
 
 def delete_project(name: str) -> None:

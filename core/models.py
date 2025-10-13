@@ -41,7 +41,7 @@ class Task:
         is_title_valid = validate_task_title(title)
         is_desc_valid = validate_task_description(description)
         is_status_valid = validate_task_status(status)
-        is_deadline_valid = validate_task_deadline(deadline)
+        is_deadline_valid = validate_task_deadline(deadline) if deadline is not None else True
 
         if is_title_valid and is_desc_valid and is_status_valid and is_deadline_valid:
             self.uuid = tiny_id()
@@ -102,6 +102,22 @@ class Project:
             self.name = name
             self.description = description
             Project.project_count += 1
+
+    def get_name(self) -> str:
+        """
+        Get the project name.
+
+        :return: The project name
+        """
+        return self.name
+
+    def get_description(self) -> str:
+        """
+        Get the project description.
+
+        :return: The project description
+        """
+        return self.description
 
     def set_name(self, new_name: str):
         """

@@ -233,7 +233,7 @@ def _handle_update_command(args: List[str]) -> None:
         new_name = input().strip()
         print("Please enter new project description [leave blank if want unchanged]:")
         new_description = input().strip()
-        old_name = project.name
+        old_name = project.get_name()
         try:
             if new_name:
                 project.set_name(new_name)
@@ -264,7 +264,7 @@ def _handle_get_projects() -> None:
 
         print_success(f"Found {len(projects)} project(s):")
         for idx, project in enumerate(projects, 1):
-            print(f"  {idx}. {project.name} - {project.description}")
+            print(f"  {idx}. {project.get_name()} - {project.get_description()}")
             tasks = get_project_tasks(project)
             print(f"     Tasks: {len(tasks)}")
             print("     " + "-" * 40)
