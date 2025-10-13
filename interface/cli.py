@@ -198,7 +198,7 @@ def _handle_update_command(args: List[str]) -> None:
 
         print_info(f"Update task {args[2]} in project {args[1]}")
 
-    if resource == "task_status":
+    elif resource == "task_status":
         if len(args) < 4:
             print_error("Project name, task ID, and new status required")
             return
@@ -219,7 +219,7 @@ def _handle_update_command(args: List[str]) -> None:
 
         print_info(f"Update task {args[2]} status in project {args[1]} to {new_status}")
 
-    if resource == "project":
+    elif resource == "project":
         if len(args) < 2:
             print_error("Project name required")
             return
