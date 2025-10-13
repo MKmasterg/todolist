@@ -46,7 +46,7 @@ def delete_project(project: Project) -> bool:
     :param project: The Project instance to delete.
     :return: True if the project was deleted successfully.
     """
-    db_delete_project(project.name)
+    db_delete_project(project.get_name())
     return True
 
 
@@ -70,7 +70,7 @@ def add_task_to_project(project: Project, title: str, description: str = "", sta
     :return: True if the task was added successfully.
     """
     task = Task(title=title, description=description, status=status, deadline=deadline)
-    add_task(project.name, task)
+    add_task(project.get_name(), task)
     return True
 
 
@@ -79,13 +79,12 @@ def update_task_status(project: Project, task_uuid: str, new_status: str) -> boo
     Update the status of a task.
 
     :param project: The Project instance containing the task.
-    :param task_uuid: The UUID of the task to update.
-    :param new_status: The new status (must be one of: todo, doing, done).
+    :param task_uuid: The UUID of the task to update.    :param new_status: The new status (must be one of: todo, doing, done).
     :return: True if the task status was updated successfully.
     """
-    task = get_task_by_uuid(project.name, task_uuid)
+    task = get_task_by_uuid(project.get_name(), task_uuid)
     task.set_status(new_status)
-    update_task_by_uuid(project.name, task_uuid, task)
+    update_task_by_uuid(project.get_name(), task_uuid, task)
     return True
 
 
@@ -98,15 +97,14 @@ def update_task_elements(project: Project, task_uuid: str, new_title: str, new_d
     :param task_uuid: The UUID of the task to update.
     :param new_title: The new task title.
     :param new_description: The new task description.
-    :param new_status: The new task status (must be one of: todo, doing, done).
-    :param new_deadline: The new task deadline (must be a valid date or None).
+    :param new_status: The new task status (must be one of: todo, doing, done).    :param new_deadline: The new task deadline (must be a valid date or None).
     :return: True if the task was updated successfully.
     """
-    task = get_task_by_uuid(project.name, task_uuid)
+    task = get_task_by_uuid(project.get_name(), task_uuid)
     new_task = Task(title=new_title, description=new_description, status=new_status, deadline=new_deadline)
     # Preserve the original uuid
-    new_task.uuid = task.uuid
-    update_task_by_uuid(project.name, task_uuid, new_task)
+    new_task.uuid = task.get_uuid()
+    update_task_by_uuid(project.get_name(), task_uuid, new_task)
     return True
 
 
@@ -118,7 +116,7 @@ def delete_task_from_project(project: Project, task_uuid: str) -> bool:
     :param task_uuid: The UUID of the task to delete.
     :return: True if the task was deleted successfully.
     """
-    delete_task_by_uuid(project.name, task_uuid)
+    delete_task_by_uuid(project.get_name(), task_uuid)
     return True
 
 
@@ -138,4 +136,4 @@ def get_project_tasks(project: Project) -> List[Task]:
     :param project: The Project instance.
     :return: List of tasks in the project.
     """
-    return get_tasks(project.name)
+    return get_tasks(project.get_name())
