@@ -8,7 +8,7 @@ def validate_project_name(name: str) -> bool:
     :param name: The project name to validate.
     :return: True if valid, raise an exception if invalid.
     """
-    if not (30 >= len(name.split()) and len(name) > 0):
+    if not (30 >= len(name.split()) > 0):
         raise InvalidProjectNameSizeError("Project name must be at most 30 characters and not empty.")
 
     return True
@@ -19,7 +19,7 @@ def validate_project_description(description: str) -> bool:
     :param description: The project description to validate.
     :return: True if valid, raise an exception if invalid.
     """
-    if description and not (len(description.split()) <= 150 and len(description) > 0):
+    if not (150 >= len(description.split()) > 0):
         raise InvalidProjectDescriptionSizeError("Project description must be at most 150 characters and not empty.")
 
     return True
@@ -42,10 +42,10 @@ def validate_task_description(description: str) -> bool:
     :param description: The task description to validate.
     :return: True if valid, raise an exception if invalid.
     """
-    if description:
-        word_count = len(description.split())
-        if not (0 < word_count <= 150):
-            raise InvalidTaskDescriptionSizeError("Task description must be at most 150 words and not empty.")
+
+    word_count = len(description.split())
+    if not (0 < word_count <= 150):
+        raise InvalidTaskDescriptionSizeError("Task description must be at most 150 words and not empty.")
 
     return True
 
