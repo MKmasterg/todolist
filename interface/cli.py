@@ -283,6 +283,7 @@ def _handle_get_tasks(project_name: str) -> Optional[List]:
     try:
         project = get_project_from_name(project_name)
         tasks = get_project_tasks(project)
+        tasks.reverse()
 
         if not tasks:
             print_info(f"No tasks found for project '{project_name}'")
