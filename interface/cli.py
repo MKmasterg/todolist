@@ -191,7 +191,7 @@ def _handle_update_command(args: List[str]) -> None:
 
         # Update the task in the project
         try:
-            update_task_elements(project, args[2], new_task.title, new_task.description, new_task.status, new_task.deadline)
+            update_task_elements(project, args[2], new_task.get_title(), new_task.get_description(), new_task.get_status(), new_task.get_deadline())
         except Exception as e:
             print_error(f"Error saving updated task: {str(e)}")
             return
@@ -212,7 +212,7 @@ def _handle_update_command(args: List[str]) -> None:
 
         try:
             task.set_status(new_status)
-            update_task_elements(project, args[2], task.title, task.description, task.status, task.deadline)
+            update_task_elements(project, args[2], task.get_title(), task.get_description(), task.get_status(), task.get_deadline())
         except Exception as e:
             print_error(f"Error updating task status: {str(e)}")
             return
@@ -290,10 +290,10 @@ def _handle_get_tasks(project_name: str) -> Optional[List]:
 
         print_success(f"Tasks in project '{project_name}':")
         for _, task in enumerate(tasks, 1):
-            print(f"  {task.uuid}. {task.title} - {task.status}")
-            if task.deadline:
-                print(f"     Deadline: {task.deadline}")
-            print(f"     Description: {task.description}")
+            print(f"  {task.get_uuid()}. {task.get_title()} - {task.get_status()}")
+            if task.get_deadline():
+                print(f"     Deadline: {task.get_deadline()}")
+            print(f"     Description: {task.get_description()}")
             print("     " + "-" * 40)
 
         return tasks

@@ -103,7 +103,7 @@ def update_task_elements(project: Project, task_uuid: str, new_title: str, new_d
     task = get_task_by_uuid(project.get_name(), task_uuid)
     new_task = Task(title=new_title, description=new_description, status=new_status, deadline=new_deadline)
     # Preserve the original uuid
-    new_task.uuid = task.uuid
+    new_task.uuid = task.get_uuid()
     update_task_by_uuid(project.get_name(), task_uuid, new_task)
     return True
 

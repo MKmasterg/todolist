@@ -117,7 +117,7 @@ def get_task_by_uuid(project_name: str, task_uuid: str) -> Task:
     if project_name not in tasks_db:
         raise ProjectNotFoundError(f"Project with name '{project_name}' not found.")
     for task in tasks_db[project_name]:
-        if task.uuid == task_uuid:
+        if task.get_uuid() == task_uuid:
             return task
     raise TaskNotFoundError(f"Task with uuid '{task_uuid}' not found in project '{project_name}'.")
 
@@ -133,7 +133,7 @@ def update_task_by_uuid(project_name: str, task_uuid: str, updated_task: Task) -
     if project_name not in tasks_db:
         raise ProjectNotFoundError(f"Project with name '{project_name}' not found.")
     for idx, task in enumerate(tasks_db[project_name]):
-        if task.uuid == task_uuid:
+        if task.get_uuid() == task_uuid:
             tasks_db[project_name][idx] = updated_task
             return
     raise TaskNotFoundError(f"Task with uuid '{task_uuid}' not found in project '{project_name}'.")
@@ -150,7 +150,7 @@ def delete_task_by_uuid(project_name: str, task_uuid: str) -> None:
         raise ProjectNotFoundError(f"Project with name '{project_name}' not found.")
 
     original_length = len(tasks_db[project_name])
-    tasks_db[project_name] = [t for t in tasks_db[project_name] if t.uuid != task_uuid]
+    tasks_db[project_name] = [t for t in tasks_db[project_name] if t.get_uuid() != task_uuid]
 
     if len(tasks_db[project_name]) == original_length:
         raise TaskNotFoundError(f"Task with uuid '{task_uuid}' not found in project '{project_name}'.")

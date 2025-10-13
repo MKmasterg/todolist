@@ -51,6 +51,46 @@ class Task:
             self.deadline = deadline
             Task.task_count += 1
 
+    def get_uuid(self) -> str:
+        """
+        Get the task UUID.
+
+        :return: The task UUID
+        """
+        return self.uuid
+
+    def get_title(self) -> str:
+        """
+        Get the task title.
+
+        :return: The task title
+        """
+        return self.title
+
+    def get_description(self) -> str:
+        """
+        Get the task description.
+
+        :return: The task description
+        """
+        return self.description
+
+    def get_status(self) -> str:
+        """
+        Get the task status.
+
+        :return: The task status
+        """
+        return self.status
+
+    def get_deadline(self) -> Optional[datetime | str]:
+        """
+        Get the task deadline.
+
+        :return: The task deadline
+        """
+        return self.deadline
+
     def set_title(self, new_title: str):
         """
         Update the task title.
