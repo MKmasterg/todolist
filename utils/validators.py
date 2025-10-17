@@ -19,8 +19,8 @@ def validate_project_description(description: str) -> bool:
     :param description: The project description to validate.
     :return: True if valid, raise an exception if invalid.
     """
-    if not (150 >= len(description.split()) > 0):
-        raise InvalidProjectDescriptionSizeError("Project description must be at most 150 characters and not empty.")
+    if not (150 >= len(description.split())):
+        raise InvalidProjectDescriptionSizeError("Project description must be at most 150 characters.")
 
     return True
 
@@ -44,8 +44,8 @@ def validate_task_description(description: str) -> bool:
     """
 
     word_count = len(description.split())
-    if not (0 < word_count <= 150):
-        raise InvalidTaskDescriptionSizeError("Task description must be at most 150 words and not empty.")
+    if not (word_count <= 150):
+        raise InvalidTaskDescriptionSizeError("Task description must be at most 150 words.")
 
     return True
 
