@@ -1,8 +1,12 @@
+import readline
 from interface.cli import handle_command, print_help
 from interface.arg_parser import parse_args
 
 
 def main():
+    # Configure readline for command history
+    readline.parse_and_bind('tab: complete')
+
     print("Welcome to the CLI application.")
     print_help()
     print("> ", end=" ")
