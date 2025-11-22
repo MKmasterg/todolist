@@ -112,7 +112,7 @@ def get_task_by_uuid_in_project(db: Session, project_name: str, task_uuid: str) 
         title=task_model.title,
         description=task_desc,
         status=task_model.status,
-        deadline=task_model.due_date
+        deadline=task_model.deadline
     )
     task.uuid = str(task_model.uuid)
     return task
@@ -189,7 +189,7 @@ def update_task_status(db: Session, project: Project, task_uuid: str, new_status
         title=task_model.title,
         description=task_desc,
         status=new_status,
-        deadline=task_model.due_date
+        deadline=task_model.deadline
     )
     db.commit()
     return True
@@ -322,7 +322,7 @@ def get_project_tasks(db: Session, project: Project) -> List[Task]:
             title=tm.title,
             description=task_desc,
             status=tm.status,
-            deadline=tm.due_date
+            deadline=tm.deadline
         )
         task.uuid = str(tm.uuid)
         tasks.append(task)
