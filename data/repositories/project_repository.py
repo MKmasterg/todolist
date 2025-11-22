@@ -7,18 +7,31 @@ from core.exceptions import ProjectNotFoundError, DuplicateProjectNameError
 
 class ProjectRepository(BaseRepository[ProjectModel]):
     def __init__(self, db: Session):
+        """Initialize the project repository.
+        :param db: The database session.
+        """
         super().__init__(db, ProjectModel)
 
     def get_by_name(self, name: str) -> Optional[ProjectModel]:
-        """Get project by name"""
+        """Get project by name.
+        :param name: The name of the project to retrieve.
+        :return: The ProjectModel if found, None otherwise.
+        """
         return self.db.query(ProjectModel).filter(ProjectModel.name == name).first()
 
     def exists_by_name(self, name: str) -> bool:
-        """Check if project with given name exists"""
+        """Check if project with given name exists.
+        :param name: The name of the project to check.
+        :return: True if a project with the given name exists, False otherwise.
+        """
         return self.db.query(ProjectModel).filter(ProjectModel.name == name).count() > 0
 
     def create_project(self, name: str, description: str = "") -> ProjectModel:
-        """Create a new project"""
+        """Create a new project.
+        :param name: The name of the project.
+        :param description: The description of the project (optional).
+        :return: The created ProjectModel.
+        """
         if self.exists_by_name(name):
             raise DuplicateProjectNameError(f"Project with name '{name}' already exists.")
 
@@ -26,7 +39,12 @@ class ProjectRepository(BaseRepository[ProjectModel]):
         return self.add(project)
 
     def update_project(self, old_name: str, new_name: str, new_description: str) -> ProjectModel:
-        """Update project details"""
+        """Update project details.
+        :param old_name: The current name of the project to update.
+        :param new_name: The new name for the project.
+        :param new_description: The new description for the project.
+        :return: The updated ProjectModel.
+        """
         project = self.get_by_name(old_name)
         if not project:
             raise ProjectNotFoundError(f"Project with name '{old_name}' not found.")
@@ -39,12 +57,16 @@ class ProjectRepository(BaseRepository[ProjectModel]):
         return self.update(project)
 
     def delete_project(self, name: str) -> None:
-        """Delete project by name"""
+        """Delete project by name.
+        :param name: The name of the project to delete.
+        """
         project = self.get_by_name(name)
         if not project:
             raise ProjectNotFoundError(f"Project with name '{name}' not found.")
         self.delete(project)
 
     def get_all_projects(self) -> List[ProjectModel]:
-        """Get all projects"""
+        """Get all projects.
+        :return: List of all ProjectModel instances.
+        """
         return self.get_all()
