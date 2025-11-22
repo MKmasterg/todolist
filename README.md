@@ -8,33 +8,79 @@ A todo list application for managing projects and tasks efficiently.
 -  **Task Management**: Add, update, delete, and list tasks within projects
 -  **Task Status Tracking**: Track tasks with three states (todo, doing, done)
 -  **Deadline Support**: Set optional deadlines for tasks
+-  **PostgreSQL Database**: Persistent storage using PostgreSQL
+-  **Database Migrations**: Alembic integration for schema management
 
 ## Requirements
 
 - Python 3.13 or higher
 - Poetry (for dependency management)
+- Docker and Docker Compose (for PostgreSQL database)
 
 ## Installation
 
-### 1. Install Poetry
+### 1. Install Docker
+
+Make sure you have Docker Desktop installed on Windows. Download it from [https://www.docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop).
+
+### 2. Install Poetry
 
 If you don't have Poetry installed, install it by following the instructions at [https://python-poetry.org/docs/#installation](https://python-poetry.org/docs/#installation).
 
-### 2. Clone the Repository
+### 3. Clone the Repository
 
 ```bash
 git clone https://github.com/MKmasterg/todolist.git
 cd todolist
 ```
 
-### 3. Install Dependencies
+### 4. Install Dependencies
 
 ```bash
 poetry install
 ```
 
-This will create a virtual environment and install all required dependencies specified in `pyproject.toml`.
+### 5. Set Up Environment Variables
 
+Create a `.env` file in the root directory based on `.env.example`:
+
+```bash
+cp .env.example .env
+```
+
+Or manually create a `.env` file with the following content:
+
+```env
+# Application Configuration
+MAX_NUMBER_OF_PROJECT=1000
+MAX_NUMBER_OF_TASK=10000
+
+# PostgreSQL Database Configuration
+POSTGRES_USER=todolist
+POSTGRES_PASSWORD=todolist123
+POSTGRES_DB=todolist_db
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+
+# Database URL
+DATABASE_URL=postgresql://todolist:todolist123@localhost:5432/todolist_db
+```
+
+### 6. Start PostgreSQL with Docker Compose
+
+```bash
+docker compose -f docker-compose.yml up -d
+```
+
+This will start a PostgreSQL database container in the background.
+
+### 7. Run Database Migrations
+
+```bash
+poetry run alembic upgrade head
+```
+
+This will create the necessary database tables.
 ## Running the Application
 
 ### Using Poetry
@@ -42,7 +88,6 @@ This will create a virtual environment and install all required dependencies spe
 ```bash
 poetry run python main.py
 ```
-
 ## Usage
 
 Once the application starts, you'll see a welcome message and a command prompt (`>`). Here are the available commands:
@@ -120,19 +165,32 @@ delete task "<project-name>" <task-id>
 todolist/
 ├── core/               # Core business logic
 │   ├── exceptions.py   # Custom exceptions
-│   ├── models.py       # Data models (Project, Task, Status)
-│   └── services.py     # Business logic services
+│   ├── models.py       # Domain models (Project, Task, Status)
+│   ├── services.py     # Business logic services
+│   └── validators/     # Input validators
+│       ├── project_validators.py
+│       └── task_validators.py
 ├── data/               # Data layer
+│   ├── database.py     # Database connection and session management
 │   ├── env_loader.py   # Environment configuration
-│   └── in_memory_db.py # In-memory database implementation
+│   ├── models/         # SQLAlchemy ORM models
+│   │   ├── project_model.py
+│   │   └── task_model.py
+│   ├── repositories/   # Data access layer
+│   │   ├── base.py
+│   │   ├── project_repository.py
+│   │   └── task_repository.py
+│   └── migrations/     # Alembic database migrations
+│       └── versions/
 ├── interface/          # User interface layer
 │   ├── arg_parser.py   # Command argument parser
 │   └── cli.py          # CLI command handlers
 ├── utils/              # Utility functions
-│   ├── id_generator.py # Unique ID generation
-│   └── validators.py   # Input validation
+│   └── id_generator.py # Unique ID generation
 ├── main.py             # Application entry point
-└── pyproject.toml      # Poetry configuration
+├── pyproject.toml      # Poetry configuration
+├── alembic.ini         # Alembic configuration
+└── docker-compose.yml  # Docker Compose for PostgreSQL
 ```
 
 ## Configuration
@@ -140,11 +198,53 @@ todolist/
 You can configure the application by creating a `.env` file in the root directory:
 
 ```env
-MAX_NUMBER_OF_PROJECT=100
-MAX_NUMBER_OF_TASK=1000
+# Application Configuration
+MAX_NUMBER_OF_PROJECT=1000
+MAX_NUMBER_OF_TASK=10000
+
+# PostgreSQL Database Configuration
+POSTGRES_USER=todolist
+POSTGRES_PASSWORD=todolist123
+POSTGRES_DB=todolist_db
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+
+# Database URL
+DATABASE_URL=postgresql://todolist:todolist123@localhost:5432/todolist_db
 ```
 
+### Configuration Options
+
+- `MAX_NUMBER_OF_PROJECT`: Maximum number of projects (default: 1000)
+- `MAX_NUMBER_OF_TASK`: Maximum number of tasks (default: 10000)
+- `POSTGRES_USER`: PostgreSQL username
+- `POSTGRES_PASSWORD`: PostgreSQL password
+- `POSTGRES_DB`: PostgreSQL database name
+- `POSTGRES_HOST`: PostgreSQL host (default: localhost)
+- `POSTGRES_PORT`: PostgreSQL port (default: 5432)
+- `DATABASE_URL`: Full database connection URL
+
 ## Development
+
+### Database Migrations
+
+Create a new migration after modifying models:
+
+```bash
+poetry run alembic revision --autogenerate -m "description of changes"
+```
+
+Apply migrations:
+
+```bash
+poetry run alembic upgrade head
+```
+
+Rollback last migration:
+
+```bash
+poetry run alembic downgrade -1
+```
 
 ### Adding New Dependencies
 
