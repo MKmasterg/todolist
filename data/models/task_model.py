@@ -18,7 +18,7 @@ class TaskModel(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(50), default="todo", nullable=False)
-    due_date: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    deadline: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(), onupdate=datetime.now(), nullable=False)
 
