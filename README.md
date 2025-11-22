@@ -8,6 +8,7 @@ A todo list application for managing projects and tasks efficiently.
 -  **Task Management**: Add, update, delete, and list tasks within projects
 -  **Task Status Tracking**: Track tasks with three states (todo, doing, done)
 -  **Deadline Support**: Set optional deadlines for tasks
+-  **Automated Task Closure**: Background scheduler to automatically close overdue tasks
 -  **PostgreSQL Database**: Persistent storage using PostgreSQL
 -  **Database Migrations**: Alembic integration for schema management
 
@@ -25,7 +26,7 @@ Make sure you have Docker Desktop installed on Windows. Download it from [https:
 
 ### 2. Install Poetry
 
-If you don't have Poetry installed, install it by following the instructions at [https://python-poetry.org/docs/#installation](https://python-poetry.org/docs/#installation).
+If you don't have Poetry installed, install it by following the instructions at [https://python-poetry.org/docs/#installation](https://www.python-poetry.org/docs/#installation).
 
 ### 3. Clone the Repository
 
@@ -262,6 +263,30 @@ poetry add --group dev <package-name>
 
 ```bash
 poetry update
+```
+
+## Background Scheduler
+
+The application includes a background scheduler that automatically closes overdue tasks.
+
+### Quick Start
+
+Run the scheduler in the background:
+
+```bash
+# Default: runs every 15 minutes
+poetry run python scheduler.py
+
+# Custom interval (in minutes)
+poetry run python scheduler.py --interval 30
+```
+
+### Manual Trigger
+
+You can also manually trigger the auto-close job from the CLI:
+
+```
+> tasks:autoclose-overdue
 ```
 
 ## License
