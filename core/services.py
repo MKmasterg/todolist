@@ -6,13 +6,15 @@ from sqlalchemy.orm import Session
 from data.repositories.project_repository import ProjectRepository
 from data.repositories.task_repository import TaskRepository
 from core.models import Project, Status, Task
-from utils.validators import (
-    validate_project_name, 
-    validate_project_description,
+from core.validators.task_validators import (
     validate_task_title,
     validate_task_description,
     validate_task_status,
     validate_task_deadline
+)
+from core.validators.project_validators import (
+    validate_project_name,
+    validate_project_description
 )
 from core.exceptions import ProjectNotFoundError, TaskNotFoundError
 
