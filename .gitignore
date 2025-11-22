@@ -206,3 +206,10 @@ Temporary Items
 .directory
 .Trash-*
 .nfs*
+
+# Docker
+docker-compose.override.yml
+postgres_data/
+*.db
+*.sqlite
+*.sqlite3

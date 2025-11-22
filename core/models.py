@@ -1,5 +1,5 @@
-from utils.validators import validate_project_name, validate_project_description, validate_task_title, \
-    validate_task_description, validate_task_status, validate_task_deadline
+from core.validators.project_validators import validate_project_name, validate_project_description
+from core.validators.task_validators import validate_task_title, validate_task_description, validate_task_status, validate_task_deadline
 
 from core.exceptions import MaxProjectsReachedError, MaxTasksReachedError
 

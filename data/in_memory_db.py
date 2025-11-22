@@ -61,7 +61,7 @@ def update_project_name(old_name: str, updated_project:Project) -> None:
     :param updated_project:
     :return:
     """
-    project: Project = projects_db.pop(old_name, None)
+    project: Optional[Project] = projects_db.pop(old_name, None)
 
     if project is None:
         raise ProjectNotFoundError(f"Project with name '{old_name}' not found.")
@@ -76,7 +76,7 @@ def delete_project(name: str) -> None:
     :param name:
     :return:
     """
-    project: Project = projects_db.pop(name, None)
+    project: Optional[Project] = projects_db.pop(name, None)
 
     if project is None:
         raise ProjectNotFoundError(f"Project with name '{name}' not found.")
