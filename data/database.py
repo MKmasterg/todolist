@@ -4,7 +4,7 @@ Database connection and session management using SQLAlchemy.
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-from env_loader import DATABASE_URL
+from data.env_loader import DATABASE_URL
 
 # Create SQLAlchemy engine
 engine = create_engine(
