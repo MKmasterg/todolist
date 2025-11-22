@@ -1,15 +1,18 @@
 from copy import copy
 from typing import List, Optional
+from datetime import datetime
+from sqlalchemy.orm import Session
 
 from core.services import (get_project_list, get_project_tasks, create_project, get_project_from_name,
                            add_task_to_project, delete_project, get_task_by_uuid_in_project, delete_task_from_project,
                            update_task_elements, update_project)
 
 
-def handle_command(command: str, args: List[str]) -> None:
+def handle_command(db: Session, command: str, args: List[str]) -> None:
     """
     Handle CLI commands.
 
+    :param db: Database session
     :param command: The command to execute (e.g., 'get', 'add', 'delete')
     :param args: List of arguments for the command
     """
@@ -18,13 +21,13 @@ def handle_command(command: str, args: List[str]) -> None:
         return
 
     if command == "get":
-        _handle_get_command(args)
+        _handle_get_command(db, args)
     elif command == "add":
-        _handle_add_command(args)
+        _handle_add_command(db, args)
     elif command == "delete":
-        _handle_delete_command(args)
+        _handle_delete_command(db, args)
     elif command == "update":
-        _handle_update_command(args)
+        _handle_update_command(db, args)
     elif command == "help":
         print_help()
     else:
@@ -32,7 +35,7 @@ def handle_command(command: str, args: List[str]) -> None:
         print_help()
 
 
-def _handle_get_command(args: List[str]) -> None:
+def _handle_get_command(db: Session, args: List[str]) -> None:
     """Handle 'get' commands."""
     if not args:
         print_error("No resource specified for 'get' command")
@@ -40,17 +43,17 @@ def _handle_get_command(args: List[str]) -> None:
 
     resource = args[0].lower()
     if resource == "projects":
-        _handle_get_projects()
+        _handle_get_projects(db)
     elif resource == "tasks":
         if len(args) < 2:
             print_error("Project name required for 'get tasks' command")
             return
-        _handle_get_tasks(args[1])
+        _handle_get_tasks(db, args[1])
     else:
         print_error(f"Unknown resource: {resource}")
 
 
-def _handle_add_command(args: List[str]) -> None:
+def _handle_add_command(db: Session, args: List[str]) -> None:
     """Handle 'add' commands."""
     if not args:
         print_error("No resource specified for 'add' command")
@@ -64,7 +67,7 @@ def _handle_add_command(args: List[str]) -> None:
         description = input().strip()
 
         try:
-            create_project(name=name, desc=description)
+            create_project(db, name=name, desc=description)
         except Exception as e:
             print_error(f"Error creating project: {str(e)}")
             return
@@ -75,7 +78,10 @@ def _handle_add_command(args: List[str]) -> None:
         print("Please enter project name to add task to:")
         project_name = input().strip()
         try:
-            selected_project = get_project_from_name(project_name)
+            selected_project = get_project_from_name(db, project_name)
+            if not selected_project:
+                print_error(f"Project '{project_name}' not found")
+                return
         except Exception as e:
             print_error(f"Error finding project: {str(e)}")
             return
@@ -89,9 +95,17 @@ def _handle_add_command(args: List[str]) -> None:
         print("Please enter task deadline (YYYY-MM-DD) [optional]:")
         deadline_input = input().strip()
 
+        deadline = None
+        if deadline_input:
+            try:
+                deadline = datetime.strptime(deadline_input, "%Y-%m-%d")
+            except ValueError:
+                print_error("Invalid deadline format. Please use YYYY-MM-DD")
+                return
+
         try:
-            add_task_to_project(selected_project, title=title, description=description, status=status,
-                                deadline=deadline_input if deadline_input else None)
+            add_task_to_project(db, selected_project, title=title, description=description, status=status,
+                                deadline=deadline)
         except Exception as e:
             print_error(f"Error adding task: {str(e)}")
             return
@@ -101,8 +115,9 @@ def _handle_add_command(args: List[str]) -> None:
         print_error(f"Unknown resource: {resource}")
 
 
-def _handle_delete_command(args: List[str]) -> None:
+def _handle_delete_command(db: Session, args: List[str]) -> None:
     """Handle 'delete' commands.
+    :param db: Database session
     :param args: List of arguments for the delete command
     """
     if not args:
@@ -115,13 +130,16 @@ def _handle_delete_command(args: List[str]) -> None:
             print_error("Project name required")
             return
         try:
-            project = get_project_from_name(args[1])  # Verify project exists
+            project = get_project_from_name(db, args[1])  # Verify project exists
+            if not project:
+                print_error(f"Project '{args[1]}' not found")
+                return
         except Exception as e:
             print_error(f"Error finding project: {str(e)}")
             return
 
         try:
-            delete_project(project)
+            delete_project(db, project)
         except Exception as e:
             print_error(f"Error deleting project: {str(e)}")
             return
@@ -133,20 +151,32 @@ def _handle_delete_command(args: List[str]) -> None:
             print_error("Project name and task ID required")
             return
         try:
-            get_task_by_uuid_in_project(args[1], args[2])  # Verify task exists
+            project = get_project_from_name(db, args[1])
+            if not project:
+                print_error(f"Project '{args[1]}' not found")
+                return
+            task = get_task_by_uuid_in_project(db, args[1], args[2])  # Verify task exists
+            if not task:
+                print_error(f"Task '{args[2]}' not found")
+                return
         except Exception as e:
             print_error(f"Error finding task: {str(e)}")
             return
 
-        delete_task_from_project(get_project_from_name(args[1]), args[2])
+        try:
+            delete_task_from_project(db, project, args[2])
+        except Exception as e:
+            print_error(f"Error deleting task: {str(e)}")
+            return
 
         print_info(f"Delete task {args[2]} from project {args[1]}")
     else:
         print_error(f"Unknown resource: {resource}")
 
 
-def _handle_update_command(args: List[str]) -> None:
+def _handle_update_command(db: Session, args: List[str]) -> None:
     """Handle 'update' commands.
+    :param db: Database session
     :param args: List of arguments for the update command
     """
     if not args:
@@ -159,8 +189,14 @@ def _handle_update_command(args: List[str]) -> None:
             print_error("Project name and task ID required")
             return
         try:
-            task = get_task_by_uuid_in_project(args[1], args[2])  # Verify task exists
-            project = get_project_from_name(args[1])
+            task = get_task_by_uuid_in_project(db, args[1], args[2])  # Verify task exists
+            if not task:
+                print_error(f"Task '{args[2]}' not found")
+                return
+            project = get_project_from_name(db, args[1])
+            if not project:
+                print_error(f"Project '{args[1]}' not found")
+                return
         except Exception as e:
             print_error(f"Error finding task: {str(e)}")
             return
@@ -172,7 +208,7 @@ def _handle_update_command(args: List[str]) -> None:
         print("Please enter new task status (todo, doing, done) [leave blank if want unchanged]:")
         new_status = input().strip()
         print("Please enter new task deadline (YYYY-MM-DD) [leave blank if want unchanged]:")
-        new_deadline = input().strip()
+        new_deadline_str = input().strip()
 
         new_task = copy(task)
 
@@ -183,7 +219,8 @@ def _handle_update_command(args: List[str]) -> None:
                 new_task.set_description(new_description)
             if new_status:
                 new_task.set_status(new_status)
-            if new_deadline:
+            if new_deadline_str:
+                new_deadline = datetime.strptime(new_deadline_str, "%Y-%m-%d")
                 new_task.set_deadline(new_deadline)
         except Exception as e:
             print_error(f"Error updating task: {str(e)}")
@@ -191,7 +228,8 @@ def _handle_update_command(args: List[str]) -> None:
 
         # Update the task in the project
         try:
-            update_task_elements(project, args[2], new_task.get_title(), new_task.get_description(), new_task.get_status(), new_task.get_deadline())
+            update_task_elements(db, project, args[2], new_task.get_title(), new_task.get_description(), 
+                               new_task.get_status(), new_task.get_deadline())
         except Exception as e:
             print_error(f"Error saving updated task: {str(e)}")
             return
@@ -203,8 +241,14 @@ def _handle_update_command(args: List[str]) -> None:
             print_error("Project name, task ID, and new status required")
             return
         try:
-            project = get_project_from_name(args[1])
-            task = get_task_by_uuid_in_project(args[1], args[2])  # Verify task exists
+            project = get_project_from_name(db, args[1])
+            if not project:
+                print_error(f"Project '{args[1]}' not found")
+                return
+            task = get_task_by_uuid_in_project(db, args[1], args[2])  # Verify task exists
+            if not task:
+                print_error(f"Task '{args[2]}' not found")
+                return
             new_status = args[3]
         except Exception as e:
             print_error(f"Error finding task or validating status: {str(e)}")
@@ -212,7 +256,8 @@ def _handle_update_command(args: List[str]) -> None:
 
         try:
             task.set_status(new_status)
-            update_task_elements(project, args[2], task.get_title(), task.get_description(), task.get_status(), task.get_deadline())
+            update_task_elements(db, project, args[2], task.get_title(), task.get_description(), 
+                               task.get_status(), task.get_deadline())
         except Exception as e:
             print_error(f"Error updating task status: {str(e)}")
             return
@@ -224,7 +269,10 @@ def _handle_update_command(args: List[str]) -> None:
             print_error("Project name required")
             return
         try:
-            project = get_project_from_name(args[1])
+            project = get_project_from_name(db, args[1])
+            if not project:
+                print_error(f"Project '{args[1]}' not found")
+                return
         except Exception as e:
             print_error(f"Error finding project: {str(e)}")
             return
@@ -240,7 +288,7 @@ def _handle_update_command(args: List[str]) -> None:
             if new_description:
                 project.set_description(new_description)
 
-            update_project(old_name, project)
+            update_project(db, old_name, project)
 
         except Exception as e:
             print_error(f"Error updating project: {str(e)}")
@@ -252,12 +300,14 @@ def _handle_update_command(args: List[str]) -> None:
         print_error(f"Unknown resource: {resource}")
 
 
-def _handle_get_projects() -> None:
+def _handle_get_projects(db: Session) -> None:
     """
     Retrieve and display all projects.
+    
+    :param db: Database session
     """
     try:
-        projects = get_project_list()
+        projects = get_project_list(db)
         if not projects:
             print_info("No projects found")
             return None
@@ -265,7 +315,7 @@ def _handle_get_projects() -> None:
         print_success(f"Found {len(projects)} project(s):")
         for idx, project in enumerate(projects, 1):
             print(f"  {idx}. {project.get_name()} - {project.get_description()}")
-            tasks = get_project_tasks(project)
+            tasks = get_project_tasks(db, project)
             print(f"     Tasks: {len(tasks)}")
             print("     " + "-" * 40)
 
@@ -274,15 +324,20 @@ def _handle_get_projects() -> None:
         return None
 
 
-def _handle_get_tasks(project_name: str) -> Optional[List]:
+def _handle_get_tasks(db: Session, project_name: str) -> Optional[List]:
     """
     Retrieve and display tasks for a specific project.
+    
+    :param db: Database session
     :param project_name: The name of the project to retrieve tasks from.
     :return: List of tasks if successful, None otherwise.
     """
     try:
-        project = get_project_from_name(project_name)
-        tasks = get_project_tasks(project)
+        project = get_project_from_name(db, project_name)
+        if not project:
+            print_error(f"Project '{project_name}' not found")
+            return None
+        tasks = get_project_tasks(db, project)
         tasks.reverse()
 
         if not tasks:
