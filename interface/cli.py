@@ -2,10 +2,18 @@ from copy import copy
 from typing import List, Optional
 from datetime import datetime
 from sqlalchemy.orm import Session
+import threading
+import time
 
 from core.services import (get_project_list, get_project_tasks, create_project, get_project_from_name,
                            add_task_to_project, delete_project, get_task_by_uuid_in_project, delete_task_from_project,
                            update_task_elements, update_project)
+from core.jobs import autoclose_overdue_tasks
+from data.database import SessionLocal
+
+# Global variable to control the autoclose background job
+_autoclose_thread = None
+_autoclose_stop_event = threading.Event()
 
 
 def handle_command(db: Session, command: str, args: List[str]) -> None:
@@ -19,7 +27,6 @@ def handle_command(db: Session, command: str, args: List[str]) -> None:
     if not command:
         print_error("No command provided")
         return
-
     if command == "get":
         _handle_get_command(db, args)
     elif command == "add":
@@ -28,6 +35,10 @@ def handle_command(db: Session, command: str, args: List[str]) -> None:
         _handle_delete_command(db, args)
     elif command == "update":
         _handle_update_command(db, args)
+    elif command == "tasks:autoclose-overdue":
+        _handle_autoclose_overdue(db)
+    elif command == "tasks:autoclose-stop":
+        _handle_autoclose_stop()
     elif command == "help":
         print_help()
     else:
@@ -300,6 +311,94 @@ def _handle_update_command(db: Session, args: List[str]) -> None:
         print_error(f"Unknown resource: {resource}")
 
 
+def _handle_autoclose_overdue(db: Session) -> None:
+    """
+    Start auto-close of overdue tasks on a recurring interval.
+    
+    :param db: Database session
+    """
+    global _autoclose_thread, _autoclose_stop_event
+    
+    # Check if there's already a running autoclose job
+    if _autoclose_thread and _autoclose_thread.is_alive():
+        print_info("Auto-close job is already running in the background")
+        print("Do you want to stop the current job and start a new one? (yes/no):")
+        response = input().strip().lower()
+        if response not in ['yes', 'y']:
+            return
+        # Stop the existing job
+        _autoclose_stop_event.set()
+        _autoclose_thread.join(timeout=2)
+        _autoclose_stop_event.clear()
+    
+    # Prompt user for interval
+    print("Please enter the interval in seconds for auto-closing overdue tasks:")
+    print("(e.g., 60 for 1 minute, 300 for 5 minutes)")
+    interval_input = input().strip()
+    
+    try:
+        interval = int(interval_input)
+        if interval <= 0:
+            print_error("Interval must be a positive number")
+            return
+    except ValueError:
+        print_error("Invalid interval. Please enter a number in seconds")
+        return
+    
+    # Start the background job
+    _autoclose_stop_event.clear()
+    _autoclose_thread = threading.Thread(
+        target=_autoclose_background_job,
+        args=(interval,),
+        daemon=True
+    )
+    _autoclose_thread.start()
+    
+    print_success(f"Auto-close job started! Running every {interval} seconds in the background")
+    print_info("The job will continue running and display updates here. Type 'tasks:autoclose-stop' to stop it.")
+
+
+def _autoclose_background_job(interval: int) -> None:
+    """
+    Background job that runs autoclose_overdue_tasks at specified intervals.
+    
+    :param interval: Time in seconds between each run
+    """
+    while not _autoclose_stop_event.is_set():
+        # Create a new database session for this background thread
+        db = SessionLocal()
+        try:
+            result = autoclose_overdue_tasks(db)
+            db.commit()
+        except Exception as e:
+            print_error(f"Error in auto-close background job: {str(e)}")
+            db.rollback()
+        finally:
+            db.close()
+          # Wait for the interval or until stop event is set
+        _autoclose_stop_event.wait(timeout=interval)
+
+
+def _handle_autoclose_stop() -> None:
+    """
+    Stop the running auto-close background job.
+    """
+    global _autoclose_thread, _autoclose_stop_event
+    
+    if not _autoclose_thread or not _autoclose_thread.is_alive():
+        print_info("No auto-close job is currently running")
+        return
+    
+    print_info("Stopping auto-close background job...")
+    _autoclose_stop_event.set()
+    _autoclose_thread.join(timeout=5)
+    
+    if _autoclose_thread.is_alive():
+        print_error("Failed to stop the auto-close job")
+    else:
+        print_success("Auto-close job stopped successfully")
+
+
 def _handle_get_projects(db: Session) -> None:
     """
     Retrieve and display all projects.
@@ -393,6 +492,8 @@ Todo List CLI - Available Commands:
   update task "<project>" <id>                 - Update a task in a project
   update task_status "<project>" <id> <status> - Update a task's status
   update project "<name>"                      - Update a project's name or description
+  tasks:autoclose-overdue                      - Start auto-close job for overdue tasks (runs at intervals)
+  tasks:autoclose-stop                         - Stop the running auto-close background job
   help                                         - Show this help message
   exit                                         - Exit the CLI
 """
