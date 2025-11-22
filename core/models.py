@@ -36,20 +36,13 @@ class Task:
         if Task.task_count >= MAX_NUMBER_OF_TASK:
             raise MaxTasksReachedError(
                 f"Cannot create more tasks. Maximum limit of {MAX_NUMBER_OF_TASK} reached.")
-
-        # Validate all fields
-        is_title_valid = validate_task_title(title)
-        is_desc_valid = validate_task_description(description)
-        is_status_valid = validate_task_status(status)
-        is_deadline_valid = validate_task_deadline(deadline) if deadline is not None else True
-
-        if is_title_valid and is_desc_valid and is_status_valid and is_deadline_valid:
-            self.uuid = tiny_id()
-            self.title = title
-            self.description = description
-            self.status = status
-            self.deadline = deadline
-            Task.task_count += 1
+        
+        self.uuid = tiny_id()
+        self.title = title
+        self.description = description
+        self.status = status
+        self.deadline = deadline
+        Task.task_count += 1
 
     def get_uuid(self) -> str:
         """
@@ -97,8 +90,7 @@ class Task:
 
         :param new_title: New task title (must be between 30 and 150 words)
         """
-        if validate_task_title(new_title):
-            self.title = new_title
+        self.title = new_title
 
     def set_description(self, new_description: str):
         """
@@ -106,8 +98,7 @@ class Task:
 
         :param new_description: New task description (must be between 30 and 150 words)
         """
-        if validate_task_description(new_description):
-            self.description = new_description
+        self.description = new_description
 
     def set_status(self, new_status: str):
         """
@@ -124,8 +115,7 @@ class Task:
 
         :param new_deadline: New deadline (must be a valid date or None)
         """
-        if validate_task_deadline(new_deadline):
-            self.deadline = new_deadline
+        self.deadline = new_deadline
 
 
 class Project:
@@ -136,12 +126,9 @@ class Project:
             raise MaxProjectsReachedError(
                 f"Cannot create more projects. Maximum limit of {MAX_NUMBER_OF_PROJECT} reached.")
 
-        is_name_valid = validate_project_name(name)
-        is_desc_valid = validate_project_description(description)
-        if is_name_valid and is_desc_valid:
-            self.name = name
-            self.description = description
-            Project.project_count += 1
+        self.name = name
+        self.description = description
+        Project.project_count += 1
 
     def get_name(self) -> str:
         """
@@ -165,8 +152,8 @@ class Project:
 
         :param new_name: New project name (must be between 30 and 150 characters)
         """
-        if validate_project_name(new_name):
-            self.name = new_name
+
+        self.name = new_name
 
     def set_description(self, new_description: str):
         """
@@ -174,5 +161,5 @@ class Project:
 
         :param new_description: New project description (must be between 30 and 150 characters)
         """
-        if validate_project_description(new_description):
-            self.description = new_description
+        
+        self.description = new_description
