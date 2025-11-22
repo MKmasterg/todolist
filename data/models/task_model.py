@@ -2,9 +2,10 @@
 SQLAlchemy database model for tasks.
 """
 from datetime import datetime
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Integer, BigInteger
+from sqlalchemy import Column, String, Text, DateTime, ForeignKey, UUID, BigInteger
 from sqlalchemy.orm import relationship
 from data.database import Base
+import uuid
 
 
 
@@ -12,7 +13,7 @@ class TaskModel(Base):
     """SQLAlchemy model for Task table."""
     __tablename__ = "tasks"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    uuid = Column(UUID, primary_key=True, default=uuid.uuid4)
     project_id = Column(BigInteger, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
@@ -25,4 +26,4 @@ class TaskModel(Base):
     project = relationship("ProjectModel", back_populates="tasks")
 
     def __repr__(self):
-        return f"<TaskModel(id={self.id}, title={self.title}, status={self.status})>"
+        return f"<TaskModel(uuid={self.uuid}, title={self.title}, status={self.status})>"
