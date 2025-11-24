@@ -8,7 +8,7 @@ def main():
     # Configure readline for command history
     readline.parse_and_bind('tab: complete')
 
-    print("Welcome to the CLI application.")
+    print("Welcome to the CLI application.\nWarning: CLI is deprecated and will be removed in future versions.\nPlease migrate to the new API.")
     print_help()
     
     # Create a database session for the CLI
