@@ -1,9 +1,9 @@
+# CLI interface is deprecated.
 from copy import copy
 from typing import List, Optional
 from datetime import datetime
 from sqlalchemy.orm import Session
 import threading
-import time
 
 from core.services import (get_project_list, get_project_tasks, create_project, get_project_from_name,
                            add_task_to_project, delete_project, get_task_by_uuid_in_project, delete_task_from_project,
@@ -18,6 +18,8 @@ _autoclose_stop_event = threading.Event()
 
 def handle_command(db: Session, command: str, args: List[str]) -> None:
     """
+    CLI interface is deprecated
+    
     Handle CLI commands.
 
     :param db: Database session
@@ -47,7 +49,11 @@ def handle_command(db: Session, command: str, args: List[str]) -> None:
 
 
 def _handle_get_command(db: Session, args: List[str]) -> None:
-    """Handle 'get' commands."""
+    """
+    CLI interface is deprecated
+    
+    Handle 'get' commands.
+    """
     if not args:
         print_error("No resource specified for 'get' command")
         return
@@ -65,7 +71,11 @@ def _handle_get_command(db: Session, args: List[str]) -> None:
 
 
 def _handle_add_command(db: Session, args: List[str]) -> None:
-    """Handle 'add' commands."""
+    """
+    CLI interface is deprecated
+    
+    Handle 'add' commands.
+    """
     if not args:
         print_error("No resource specified for 'add' command")
         return
@@ -127,7 +137,10 @@ def _handle_add_command(db: Session, args: List[str]) -> None:
 
 
 def _handle_delete_command(db: Session, args: List[str]) -> None:
-    """Handle 'delete' commands.
+    """
+    CLI interface is deprecated
+    
+    Handle 'delete' commands.
     :param db: Database session
     :param args: List of arguments for the delete command
     """
@@ -186,7 +199,10 @@ def _handle_delete_command(db: Session, args: List[str]) -> None:
 
 
 def _handle_update_command(db: Session, args: List[str]) -> None:
-    """Handle 'update' commands.
+    """
+    CLI interface is deprecated
+    
+    Handle 'update' commands.
     :param db: Database session
     :param args: List of arguments for the update command
     """
@@ -313,6 +329,8 @@ def _handle_update_command(db: Session, args: List[str]) -> None:
 
 def _handle_autoclose_overdue(db: Session) -> None:
     """
+    CLI interface is deprecated
+    
     Start auto-close of overdue tasks on a recurring interval.
     
     :param db: Database session
@@ -360,6 +378,8 @@ def _handle_autoclose_overdue(db: Session) -> None:
 
 def _autoclose_background_job(interval: int) -> None:
     """
+    CLI interface is deprecated
+    
     Background job that runs autoclose_overdue_tasks at specified intervals.
     
     :param interval: Time in seconds between each run
@@ -381,6 +401,8 @@ def _autoclose_background_job(interval: int) -> None:
 
 def _handle_autoclose_stop() -> None:
     """
+    CLI interface is deprecated
+    
     Stop the running auto-close background job.
     """
     global _autoclose_thread, _autoclose_stop_event
@@ -401,6 +423,8 @@ def _handle_autoclose_stop() -> None:
 
 def _handle_get_projects(db: Session) -> None:
     """
+    CLI interface is deprecated
+    
     Retrieve and display all projects.
     
     :param db: Database session
@@ -425,6 +449,8 @@ def _handle_get_projects(db: Session) -> None:
 
 def _handle_get_tasks(db: Session, project_name: str) -> Optional[List]:
     """
+    CLI interface is deprecated
+    
     Retrieve and display tasks for a specific project.
     
     :param db: Database session
@@ -458,28 +484,41 @@ def _handle_get_tasks(db: Session, project_name: str) -> Optional[List]:
 
 
 def print_success(message: str) -> None:
-    """Print a success message.
+    """
+    CLI interface is deprecated
+    
+    Print a success message.
     :param message: The success message to print.
     """
     print(f"✓ {message}")
 
 
 def print_error(message: str) -> None:
-    """Print an error message.
+    """
+    CLI interface is deprecated
+    
+    Print an error message.
     :param message: The error message to print.
     """
     print(f"✗ Error: {message}")
 
 
 def print_info(message: str) -> None:
-    """Print an informational message.
+    """
+    CLI interface is deprecated
+    
+    Print an informational message.
     :param message: The informational message to print.
     """
     print(f"ℹ {message}")
 
 
 def print_help() -> None:
-    """Display help information about available commands."""
+    """
+    CLI interface is deprecated
+    
+    Display help information about available commands.
+    """
     help_text = """
 Todo List CLI - Available Commands:
 
