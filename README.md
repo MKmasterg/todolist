@@ -91,6 +91,10 @@ poetry run python main.py
 ```
 ## Usage
 
+> **⚠️ CLI Deprecation Notice:**
+> The command-line interface (CLI) is deprecated and will be removed in future versions. Please use the RESTful API for all interactions. See below for API usage instructions.
+
+
 Once the application starts, you'll see a welcome message and a command prompt (`>`). Here are the available commands:
 
 ### Project Commands
