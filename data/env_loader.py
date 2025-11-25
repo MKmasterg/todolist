@@ -15,5 +15,5 @@ MAX_NUMBER_OF_TASK = int(os.getenv('MAX_NUMBER_OF_TASK', 10000))
 # Load database configuration
 DATABASE_URL = os.getenv(
     'DATABASE_URL',
-    'postgresql://todolist_user:todolist_pass@localhost:5432/todolist_db'
+    'postgresql+asyncpg://todolist_user:todolist_pass@localhost:5432/todolist_db'
 )
