@@ -1,22 +1,28 @@
-# CLI interface is deprecated.
+""" NOTE: CLI interface is deprecated.
+"""
 from copy import copy
 from typing import List, Optional
 from datetime import datetime
-from sqlalchemy.orm import Session
-import threading
+from sqlalchemy.ext.asyncio import AsyncSession
+import asyncio
 
 from core.services import (get_project_list, get_project_tasks, create_project, get_project_from_name,
                            add_task_to_project, delete_project, get_task_by_uuid_in_project, delete_task_from_project,
                            update_task_elements, update_project)
 from core.jobs import autoclose_overdue_tasks
-from data.database import SessionLocal
+from data.database import AsyncSessionLocal
 
-# Global variable to control the autoclose background job
-_autoclose_thread = None
-_autoclose_stop_event = threading.Event()
+# Global variables to control the autoclose background job (async)
+_autoclose_task: Optional[asyncio.Task] = None
+_autoclose_stop_event: asyncio.Event = asyncio.Event()
 
 
-def handle_command(db: Session, command: str, args: List[str]) -> None:
+async def ai_input(prompt: str = "") -> str:
+    """Run blocking input() in a thread to avoid blocking the event loop."""
+    return await asyncio.to_thread(input, prompt)
+
+
+async def handle_command(db: AsyncSession, command: str, args: List[str]) -> None:
     """
     CLI interface is deprecated
     
@@ -30,13 +36,13 @@ def handle_command(db: Session, command: str, args: List[str]) -> None:
         print_error("No command provided")
         return
     if command == "get":
-        _handle_get_command(db, args)
+        await _handle_get_command(db, args)
     elif command == "add":
-        _handle_add_command(db, args)
+        await _handle_add_command(db, args)
     elif command == "delete":
-        _handle_delete_command(db, args)
+        await _handle_delete_command(db, args)
     elif command == "update":
-        _handle_update_command(db, args)
+        await _handle_update_command(db, args)
     elif command == "tasks:autoclose-overdue":
         _handle_autoclose_overdue(db)
     elif command == "tasks:autoclose-stop":
@@ -48,7 +54,7 @@ def handle_command(db: Session, command: str, args: List[str]) -> None:
         print_help()
 
 
-def _handle_get_command(db: Session, args: List[str]) -> None:
+async def _handle_get_command(db: AsyncSession, args: List[str]) -> None:
     """
     CLI interface is deprecated
     
@@ -60,17 +66,17 @@ def _handle_get_command(db: Session, args: List[str]) -> None:
 
     resource = args[0].lower()
     if resource == "projects":
-        _handle_get_projects(db)
+        await _handle_get_projects(db)
     elif resource == "tasks":
         if len(args) < 2:
             print_error("Project name required for 'get tasks' command")
             return
-        _handle_get_tasks(db, args[1])
+        await _handle_get_tasks(db, args[1])
     else:
         print_error(f"Unknown resource: {resource}")
 
 
-def _handle_add_command(db: Session, args: List[str]) -> None:
+async def _handle_add_command(db: AsyncSession, args: List[str]) -> None:
     """
     CLI interface is deprecated
     
@@ -82,13 +88,11 @@ def _handle_add_command(db: Session, args: List[str]) -> None:
 
     resource = args[0].lower()
     if resource == "project":
-        print("Please enter project name (at most 30 characters):")
-        name = input().strip()
-        print("Please enter project description (optional, at most 150 characters):")
-        description = input().strip()
+        name = (await ai_input("Please enter project name (at most 30 characters):\n")).strip()
+        description = (await ai_input("Please enter project description (optional, at most 150 characters):\n")).strip()
 
         try:
-            create_project(db, name=name, desc=description)
+            await create_project(db, name=name, desc=description)
         except Exception as e:
             print_error(f"Error creating project: {str(e)}")
             return
@@ -96,10 +100,9 @@ def _handle_add_command(db: Session, args: List[str]) -> None:
         print_info(f"Add project: {name}")
 
     elif resource == "task":
-        print("Please enter project name to add task to:")
-        project_name = input().strip()
+        project_name = (await ai_input("Please enter project name to add task to:\n")).strip()
         try:
-            selected_project = get_project_from_name(db, project_name)
+            selected_project = await get_project_from_name(db, project_name)
             if not selected_project:
                 print_error(f"Project '{project_name}' not found")
                 return
@@ -107,14 +110,10 @@ def _handle_add_command(db: Session, args: List[str]) -> None:
             print_error(f"Error finding project: {str(e)}")
             return
 
-        print("Please enter task title (at most 30 characters):")
-        title = input().strip()
-        print("Please enter task description (optional, at most 150 characters):")
-        description = input().strip()
-        print("Please enter task status (todo, doing, done) [default: todo]:")
-        status = input().strip() or "todo"
-        print("Please enter task deadline (YYYY-MM-DD) [optional]:")
-        deadline_input = input().strip()
+        title = (await ai_input("Please enter task title (at most 30 characters):\n")).strip()
+        description = (await ai_input("Please enter task description (optional, at most 150 characters):\n")).strip()
+        status = (await ai_input("Please enter task status (todo, doing, done) [default: todo]:\n")).strip() or "todo"
+        deadline_input = (await ai_input("Please enter task deadline (YYYY-MM-DD) [optional]:\n")).strip()
 
         deadline = None
         if deadline_input:
@@ -125,7 +124,7 @@ def _handle_add_command(db: Session, args: List[str]) -> None:
                 return
 
         try:
-            add_task_to_project(db, selected_project, title=title, description=description, status=status,
+            await add_task_to_project(db, selected_project, title=title, description=description, status=status,
                                 deadline=deadline)
         except Exception as e:
             print_error(f"Error adding task: {str(e)}")
@@ -136,7 +135,7 @@ def _handle_add_command(db: Session, args: List[str]) -> None:
         print_error(f"Unknown resource: {resource}")
 
 
-def _handle_delete_command(db: Session, args: List[str]) -> None:
+async def _handle_delete_command(db: AsyncSession, args: List[str]) -> None:
     """
     CLI interface is deprecated
     
@@ -154,7 +153,7 @@ def _handle_delete_command(db: Session, args: List[str]) -> None:
             print_error("Project name required")
             return
         try:
-            project = get_project_from_name(db, args[1])  # Verify project exists
+            project = await get_project_from_name(db, args[1])  # Verify project exists
             if not project:
                 print_error(f"Project '{args[1]}' not found")
                 return
@@ -163,7 +162,7 @@ def _handle_delete_command(db: Session, args: List[str]) -> None:
             return
 
         try:
-            delete_project(db, project)
+            await delete_project(db, project)
         except Exception as e:
             print_error(f"Error deleting project: {str(e)}")
             return
@@ -175,11 +174,11 @@ def _handle_delete_command(db: Session, args: List[str]) -> None:
             print_error("Project name and task ID required")
             return
         try:
-            project = get_project_from_name(db, args[1])
+            project = await get_project_from_name(db, args[1])
             if not project:
                 print_error(f"Project '{args[1]}' not found")
                 return
-            task = get_task_by_uuid_in_project(db, args[1], args[2])  # Verify task exists
+            task = await get_task_by_uuid_in_project(db, args[1], args[2])  # Verify task exists
             if not task:
                 print_error(f"Task '{args[2]}' not found")
                 return
@@ -188,7 +187,7 @@ def _handle_delete_command(db: Session, args: List[str]) -> None:
             return
 
         try:
-            delete_task_from_project(db, project, args[2])
+            await delete_task_from_project(db, project, args[2])
         except Exception as e:
             print_error(f"Error deleting task: {str(e)}")
             return
@@ -198,7 +197,7 @@ def _handle_delete_command(db: Session, args: List[str]) -> None:
         print_error(f"Unknown resource: {resource}")
 
 
-def _handle_update_command(db: Session, args: List[str]) -> None:
+async def _handle_update_command(db: AsyncSession, args: List[str]) -> None:
     """
     CLI interface is deprecated
     
@@ -216,11 +215,11 @@ def _handle_update_command(db: Session, args: List[str]) -> None:
             print_error("Project name and task ID required")
             return
         try:
-            task = get_task_by_uuid_in_project(db, args[1], args[2])  # Verify task exists
+            task = await get_task_by_uuid_in_project(db, args[1], args[2])  # Verify task exists
             if not task:
                 print_error(f"Task '{args[2]}' not found")
                 return
-            project = get_project_from_name(db, args[1])
+            project = await get_project_from_name(db, args[1])
             if not project:
                 print_error(f"Project '{args[1]}' not found")
                 return
@@ -228,14 +227,10 @@ def _handle_update_command(db: Session, args: List[str]) -> None:
             print_error(f"Error finding task: {str(e)}")
             return
 
-        print("Please enter new task name [leave blank if want unchanged]:")
-        new_name = input().strip()
-        print("Please enter new task description [leave blank if want unchanged]:")
-        new_description = input().strip()
-        print("Please enter new task status (todo, doing, done) [leave blank if want unchanged]:")
-        new_status = input().strip()
-        print("Please enter new task deadline (YYYY-MM-DD) [leave blank if want unchanged]:")
-        new_deadline_str = input().strip()
+        new_name = (await ai_input("Please enter new task name [leave blank if want unchanged]:\n")).strip()
+        new_description = (await ai_input("Please enter new task description [leave blank if want unchanged]:\n")).strip()
+        new_status = (await ai_input("Please enter new task status (todo, doing, done) [leave blank if want unchanged]:\n")).strip()
+        new_deadline_str = (await ai_input("Please enter new task deadline (YYYY-MM-DD) [leave blank if want unchanged]:\n")).strip()
 
         new_task = copy(task)
 
@@ -255,7 +250,7 @@ def _handle_update_command(db: Session, args: List[str]) -> None:
 
         # Update the task in the project
         try:
-            update_task_elements(db, project, args[2], new_task.get_title(), new_task.get_description(), 
+            await update_task_elements(db, project, args[2], new_task.get_title(), new_task.get_description(), 
                                new_task.get_status(), new_task.get_deadline())
         except Exception as e:
             print_error(f"Error saving updated task: {str(e)}")
@@ -268,11 +263,11 @@ def _handle_update_command(db: Session, args: List[str]) -> None:
             print_error("Project name, task ID, and new status required")
             return
         try:
-            project = get_project_from_name(db, args[1])
+            project = await get_project_from_name(db, args[1])
             if not project:
                 print_error(f"Project '{args[1]}' not found")
                 return
-            task = get_task_by_uuid_in_project(db, args[1], args[2])  # Verify task exists
+            task = await get_task_by_uuid_in_project(db, args[1], args[2])  # Verify task exists
             if not task:
                 print_error(f"Task '{args[2]}' not found")
                 return
@@ -283,7 +278,7 @@ def _handle_update_command(db: Session, args: List[str]) -> None:
 
         try:
             task.set_status(new_status)
-            update_task_elements(db, project, args[2], task.get_title(), task.get_description(), 
+            await update_task_elements(db, project, args[2], task.get_title(), task.get_description(), 
                                task.get_status(), task.get_deadline())
         except Exception as e:
             print_error(f"Error updating task status: {str(e)}")
@@ -296,7 +291,7 @@ def _handle_update_command(db: Session, args: List[str]) -> None:
             print_error("Project name required")
             return
         try:
-            project = get_project_from_name(db, args[1])
+            project = await get_project_from_name(db, args[1])
             if not project:
                 print_error(f"Project '{args[1]}' not found")
                 return
@@ -304,10 +299,8 @@ def _handle_update_command(db: Session, args: List[str]) -> None:
             print_error(f"Error finding project: {str(e)}")
             return
 
-        print("Please enter new project name [leave blank if want unchanged]:")
-        new_name = input().strip()
-        print("Please enter new project description [leave blank if want unchanged]:")
-        new_description = input().strip()
+        new_name = (await ai_input("Please enter new project name [leave blank if want unchanged]:\n")).strip()
+        new_description = (await ai_input("Please enter new project description [leave blank if want unchanged]:\n")).strip()
         old_name = project.get_name()
         try:
             if new_name:
@@ -315,7 +308,7 @@ def _handle_update_command(db: Session, args: List[str]) -> None:
             if new_description:
                 project.set_description(new_description)
 
-            update_project(db, old_name, project)
+            await update_project(db, old_name, project)
 
         except Exception as e:
             print_error(f"Error updating project: {str(e)}")
@@ -327,33 +320,29 @@ def _handle_update_command(db: Session, args: List[str]) -> None:
         print_error(f"Unknown resource: {resource}")
 
 
-def _handle_autoclose_overdue(db: Session) -> None:
+async def _handle_autoclose_overdue(db: AsyncSession) -> None:
     """
     CLI interface is deprecated
-    
-    Start auto-close of overdue tasks on a recurring interval.
-    
-    :param db: Database session
+
+    Start auto-close of overdue tasks on a recurring interval (async).
     """
-    global _autoclose_thread, _autoclose_stop_event
-    
-    # Check if there's already a running autoclose job
-    if _autoclose_thread and _autoclose_thread.is_alive():
+    global _autoclose_task, _autoclose_stop_event
+
+    # If a task is already running, offer to stop it first
+    if _autoclose_task and not _autoclose_task.done():
         print_info("Auto-close job is already running in the background")
-        print("Do you want to stop the current job and start a new one? (yes/no):")
-        response = input().strip().lower()
+        response = (await ai_input("Do you want to stop the current job and start a new one? (yes/no):\n")).strip().lower()
         if response not in ['yes', 'y']:
             return
-        # Stop the existing job
         _autoclose_stop_event.set()
-        _autoclose_thread.join(timeout=2)
+        try:
+            await asyncio.wait_for(_autoclose_task, timeout=2)
+        except asyncio.TimeoutError:
+            # let it be cancelled on next iteration
+            pass
         _autoclose_stop_event.clear()
-    
-    # Prompt user for interval
-    print("Please enter the interval in seconds for auto-closing overdue tasks:")
-    print("(e.g., 60 for 1 minute, 300 for 5 minutes)")
-    interval_input = input().strip()
-    
+
+    interval_input = (await ai_input("Please enter the interval in seconds for auto-closing overdue tasks (e.g., 60):\n")).strip()
     try:
         interval = int(interval_input)
         if interval <= 0:
@@ -362,66 +351,60 @@ def _handle_autoclose_overdue(db: Session) -> None:
     except ValueError:
         print_error("Invalid interval. Please enter a number in seconds")
         return
-    
-    # Start the background job
+
     _autoclose_stop_event.clear()
-    _autoclose_thread = threading.Thread(
-        target=_autoclose_background_job,
-        args=(interval,),
-        daemon=True
-    )
-    _autoclose_thread.start()
-    
+    _autoclose_task = asyncio.create_task(_autoclose_background_job(interval))
+
     print_success(f"Auto-close job started! Running every {interval} seconds in the background")
     print_info("The job will continue running and display updates here. Type 'tasks:autoclose-stop' to stop it.")
 
 
-def _autoclose_background_job(interval: int) -> None:
+async def _autoclose_background_job(interval: int) -> None:
     """
     CLI interface is deprecated
-    
-    Background job that runs autoclose_overdue_tasks at specified intervals.
-    
-    :param interval: Time in seconds between each run
+
+    Background async job that runs autoclose_overdue_tasks at specified intervals.
     """
     while not _autoclose_stop_event.is_set():
-        # Create a new database session for this background thread
-        db = SessionLocal()
         try:
-            result = autoclose_overdue_tasks(db)
-            db.commit()
+            async with AsyncSessionLocal() as session:
+                await autoclose_overdue_tasks(session)
         except Exception as e:
             print_error(f"Error in auto-close background job: {str(e)}")
-            db.rollback()
-        finally:
-            db.close()
-          # Wait for the interval or until stop event is set
-        _autoclose_stop_event.wait(timeout=interval)
+        try:
+            await asyncio.wait_for(_autoclose_stop_event.wait(), timeout=interval)
+        except asyncio.TimeoutError:
+            # timeout expired, loop and run again
+            continue
 
 
-def _handle_autoclose_stop() -> None:
+async def _handle_autoclose_stop() -> None:
     """
     CLI interface is deprecated
-    
-    Stop the running auto-close background job.
+
+    Stop the running auto-close background job (async).
     """
-    global _autoclose_thread, _autoclose_stop_event
-    
-    if not _autoclose_thread or not _autoclose_thread.is_alive():
+    global _autoclose_task, _autoclose_stop_event
+
+    if not _autoclose_task or _autoclose_task.done():
         print_info("No auto-close job is currently running")
         return
-    
+
     print_info("Stopping auto-close background job...")
     _autoclose_stop_event.set()
-    _autoclose_thread.join(timeout=5)
-    
-    if _autoclose_thread.is_alive():
-        print_error("Failed to stop the auto-close job")
-    else:
+    try:
+        await asyncio.wait_for(_autoclose_task, timeout=5)
+    except asyncio.TimeoutError:
+        if not _autoclose_task.done():
+            _autoclose_task.cancel()
+
+    if _autoclose_task.done():
         print_success("Auto-close job stopped successfully")
+    else:
+        print_error("Failed to stop the auto-close job")
 
 
-def _handle_get_projects(db: Session) -> None:
+async def _handle_get_projects(db: AsyncSession) -> None:
     """
     CLI interface is deprecated
     
@@ -430,7 +413,7 @@ def _handle_get_projects(db: Session) -> None:
     :param db: Database session
     """
     try:
-        projects = get_project_list(db)
+        projects = await get_project_list(db)
         if not projects:
             print_info("No projects found")
             return None
@@ -438,7 +421,7 @@ def _handle_get_projects(db: Session) -> None:
         print_success(f"Found {len(projects)} project(s):")
         for idx, project in enumerate(projects, 1):
             print(f"  {idx}. {project.get_name()} - {project.get_description()}")
-            tasks = get_project_tasks(db, project)
+            tasks = await get_project_tasks(db, project)
             print(f"     Tasks: {len(tasks)}")
             print("     " + "-" * 40)
 
@@ -447,7 +430,7 @@ def _handle_get_projects(db: Session) -> None:
         return None
 
 
-def _handle_get_tasks(db: Session, project_name: str) -> Optional[List]:
+async def _handle_get_tasks(db: AsyncSession, project_name: str) -> Optional[List]:
     """
     CLI interface is deprecated
     
@@ -458,11 +441,11 @@ def _handle_get_tasks(db: Session, project_name: str) -> Optional[List]:
     :return: List of tasks if successful, None otherwise.
     """
     try:
-        project = get_project_from_name(db, project_name)
+        project = await get_project_from_name(db, project_name)
         if not project:
             print_error(f"Project '{project_name}' not found")
             return None
-        tasks = get_project_tasks(db, project)
+        tasks = await get_project_tasks(db, project)
         tasks.reverse()
 
         if not tasks:

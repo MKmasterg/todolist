@@ -188,8 +188,11 @@ todolist/
 │   └── migrations/     # Alembic database migrations
 │       └── versions/
 ├── interface/          # User interface layer
-│   ├── arg_parser.py   # Command argument parser
-│   └── cli.py          # CLI command handlers
+|    |── cli/              # Command-line interface (deprecated)
+|    |   |
+│    |   ├── arg_parser.py   # Command argument parser
+│    |   └── cli.py          # CLI command handlers
+│    └── api/              # RESTful API interface
 ├── utils/              # Utility functions
 │   └── id_generator.py # Unique ID generation
 ├── main.py             # Application entry point

@@ -1,55 +1,58 @@
 from abc import ABC
 from typing import Generic, TypeVar, Optional, List
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 T = TypeVar('T')
 
 
 class BaseRepository(ABC, Generic[T]):
-    """Base repository with common CRUD operations"""
+    """Base repository with common async CRUD operations"""
 
-    def __init__(self, db: Session, model_class):
-        """Initialize the repository with a database session and model class.
-        :param db: The database session.
+    def __init__(self, db: AsyncSession, model_class):
+        """Initialize the repository with an async database session and model class.
+        :param db: The async database session.
         :param model_class: The SQLAlchemy model class for this repository.
         """
-        self.db = db
+        self.db: AsyncSession = db
         self.model_class = model_class
 
-    def get_by_id(self, id: int) -> Optional[T]:
-        """Retrieve an entity by its ID.
+    async def get_by_id(self, id: int) -> Optional[T]:
+        """Retrieve an entity by its ID asynchronously.
         :param id: The ID of the entity to retrieve.
         :return: The entity if found, None otherwise.
         """
-        return self.db.query(self.model_class).filter(self.model_class.id == id).first()
+        result = await self.db.execute(select(self.model_class).where(self.model_class.id == id))
+        return result.scalars().first()
 
-    def get_all(self) -> List[T]:
-        """Retrieve all entities.
+    async def get_all(self) -> List[T]:
+        """Retrieve all entities asynchronously.
         :return: List of all entities.
         """
-        return self.db.query(self.model_class).all()
+        result = await self.db.execute(select(self.model_class))
+        return result.scalars().all()
 
-    def add(self, entity: T) -> T:
-        """Add a new entity to the database.
+    async def add(self, entity: T) -> T:
+        """Add a new entity to the database asynchronously.
         :param entity: The entity to add.
         :return: The added entity.
         """
         self.db.add(entity)
-        self.db.flush()
+        await self.db.flush()
         return entity
 
-    def update(self, entity: T) -> T:
-        """Update an existing entity in the database.
+    async def update(self, entity: T) -> T:
+        """Update an existing entity in the database asynchronously.
         :param entity: The entity to update.
         :return: The updated entity.
         """
-        self.db.merge(entity)
-        self.db.flush()
-        return entity
+        merged = await self.db.merge(entity)
+        await self.db.flush()
+        return merged
 
-    def delete(self, entity: T) -> None:
-        """Delete an entity from the database.
+    async def delete(self, entity: T) -> None:
+        """Delete an entity from the database asynchronously.
         :param entity: The entity to delete.
         """
-        self.db.delete(entity)
-        self.db.flush()
+        await self.db.delete(entity)
+        await self.db.flush()
