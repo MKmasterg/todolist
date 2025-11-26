@@ -92,7 +92,7 @@ This will create the necessary database tables.
 To start the RESTful API server:
 
 ```bash
-poetry run python api_main.py
+poetry run python main.py
 ```
 
 The API will be available at `http://localhost:8000` (or the port specified in your `.env`).
@@ -115,22 +115,6 @@ poetry run python scheduler.py --interval 30
 ```
 
 Note: The scheduler runs an initial check immediately upon starting.
-
-### Manual Trigger (Legacy CLI)
-
-You can also trigger the auto-close background job from within the legacy CLI:
-
-```
-> tasks:autoclose-overdue
-```
-
-### Legacy CLI (Deprecated)
-
-The command-line interface is deprecated and will be removed in future versions.
-
-```bash
-poetry run python main.py
-```
 
 ## API Usage
 
@@ -182,14 +166,12 @@ todolist/
 │   ├── repositories/   # Data access layer
 │   └── migrations/     # Alembic database migrations
 ├── interface/          # User interface layer
-│   ├── api/            # RESTful API
-│   │   ├── controller_schemas/  # Pydantic schemas for requests/responses
-│   │   ├── controllers/         # API controllers
-│   │   └── routers.py           # API route definitions
-│   └── cli/            # Command-line interface (deprecated)
+│   └── api/            # RESTful API
+│       ├── controller_schemas/  # Pydantic schemas for requests/responses
+│       ├── controllers/         # API controllers
+│       └── routers.py           # API route definitions
 ├── utils/              # Utility functions
-├── api_main.py         # API entry point
-├── main.py             # Legacy CLI entry point
+├── main.py             # API entry point
 ├── scheduler.py        # Background scheduler entry point
 ├── pyproject.toml      # Poetry configuration
 ├── alembic.ini         # Alembic configuration
