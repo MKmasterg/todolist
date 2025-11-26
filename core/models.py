@@ -21,7 +21,6 @@ class Status:
 
 class Task:
     """Represents a task with title, description, status, and deadline."""
-    task_count = 0
 
     def __init__(self, title: str, description: str = "", status: str = Status.TODO,
                  deadline: Optional[datetime | str] = None):
@@ -33,16 +32,12 @@ class Task:
         :param status: Task status (todo, doing, or done) - defaults to 'todo'
         :param deadline: Optional task deadline
         """
-        if Task.task_count >= MAX_NUMBER_OF_TASK:
-            raise MaxTasksReachedError(
-                f"Cannot create more tasks. Maximum limit of {MAX_NUMBER_OF_TASK} reached.")
         
         self.uuid = tiny_id()
         self.title = title
         self.description = description
         self.status = status
         self.deadline = deadline
-        Task.task_count += 1
 
     def get_uuid(self) -> str:
         """
@@ -119,16 +114,10 @@ class Task:
 
 
 class Project:
-    project_count = 0
 
     def __init__(self, name: str, description: str = ""):
-        if Project.project_count >= MAX_NUMBER_OF_PROJECT:
-            raise MaxProjectsReachedError(
-                f"Cannot create more projects. Maximum limit of {MAX_NUMBER_OF_PROJECT} reached.")
-
         self.name = name
         self.description = description
-        Project.project_count += 1
 
     def get_name(self) -> str:
         """
