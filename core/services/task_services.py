@@ -38,7 +38,7 @@ async def get_task_by_uuid_in_project(db: AsyncSession, project_name: str, task_
 
 
 async def add_task_to_project(db: AsyncSession, project: Project, title: str, description: str = "", 
-                        status: str = Status.TODO, deadline: Optional[datetime] = None) -> bool:
+                        status: str = Status.TODO, deadline: Optional[datetime] = None) -> Task:
     validate_project_name = lambda name: None  # Assume already validated in project_services
     validate_project_name(project.get_name())
     validate_task_title(title)
@@ -51,7 +51,7 @@ async def add_task_to_project(db: AsyncSession, project: Project, title: str, de
     if not project_model:
         raise ProjectNotFoundError(f"Project with name '{project.get_name()}' not found.")
     task_repo = TaskRepository(db)
-    await task_repo.create_task(
+    task_model = await task_repo.create_task(
         project_id=project_model.id,
         title=title,
         description=description,
@@ -59,7 +59,17 @@ async def add_task_to_project(db: AsyncSession, project: Project, title: str, de
         deadline=deadline
     )
     await db.commit()
-    return True
+    
+    # Convert to core model
+    task_desc = task_model.description if task_model.description is not None else ""
+    task = Task(
+        title=task_model.title,
+        description=task_desc,
+        status=task_model.status,
+        deadline=task_model.deadline
+    )
+    task.uuid = str(task_model.uuid)
+    return task
 
 
 async def update_task_status(db: AsyncSession, project: Project, task_uuid: str, new_status: str) -> bool:
