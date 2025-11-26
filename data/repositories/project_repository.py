@@ -1,72 +1,57 @@
 from typing import Optional, List
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func
 from data.models import ProjectModel
 from data.repositories.base import BaseRepository
 from core.exceptions import ProjectNotFoundError, DuplicateProjectNameError
 
 
 class ProjectRepository(BaseRepository[ProjectModel]):
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         """Initialize the project repository.
-        :param db: The database session.
+        :param db: The async database session.
         """
         super().__init__(db, ProjectModel)
 
-    def get_by_name(self, name: str) -> Optional[ProjectModel]:
-        """Get project by name.
-        :param name: The name of the project to retrieve.
-        :return: The ProjectModel if found, None otherwise.
-        """
-        return self.db.query(ProjectModel).filter(ProjectModel.name == name).first()
+    async def get_by_name(self, name: str) -> Optional[ProjectModel]:
+        """Get project by name asynchronously."""
+        result = await self.db.execute(select(ProjectModel).where(ProjectModel.name == name))
+        return result.scalars().first()
 
-    def exists_by_name(self, name: str) -> bool:
-        """Check if project with given name exists.
-        :param name: The name of the project to check.
-        :return: True if a project with the given name exists, False otherwise.
-        """
-        return self.db.query(ProjectModel).filter(ProjectModel.name == name).count() > 0
+    async def exists_by_name(self, name: str) -> bool:
+        """Check if project with given name exists asynchronously."""
+        result = await self.db.execute(select(func.count()).select_from(ProjectModel).where(ProjectModel.name == name))
+        count = result.scalar_one()
+        return count > 0
 
-    def create_project(self, name: str, description: str = "") -> ProjectModel:
-        """Create a new project.
-        :param name: The name of the project.
-        :param description: The description of the project (optional).
-        :return: The created ProjectModel.
-        """
-        if self.exists_by_name(name):
+    async def create_project(self, name: str, description: str = "") -> ProjectModel:
+        """Create a new project asynchronously."""
+        if await self.exists_by_name(name):
             raise DuplicateProjectNameError(f"Project with name '{name}' already exists.")
 
         project = ProjectModel(name=name, description=description)
-        return self.add(project)
+        return await self.add(project)
 
-    def update_project(self, old_name: str, new_name: str, new_description: str) -> ProjectModel:
-        """Update project details.
-        :param old_name: The current name of the project to update.
-        :param new_name: The new name for the project.
-        :param new_description: The new description for the project.
-        :return: The updated ProjectModel.
-        """
-        project = self.get_by_name(old_name)
+    async def update_project(self, old_name: str, new_name: str, new_description: str) -> ProjectModel:
+        """Update project details asynchronously."""
+        project = await self.get_by_name(old_name)
         if not project:
             raise ProjectNotFoundError(f"Project with name '{old_name}' not found.")
 
-        if new_name != old_name and self.exists_by_name(new_name):
+        if new_name != old_name and await self.exists_by_name(new_name):
             raise DuplicateProjectNameError(f"Project with name '{new_name}' already exists.")
 
         setattr(project, 'name', new_name)
         setattr(project, 'description', new_description)
-        return self.update(project)
+        return await self.update(project)
 
-    def delete_project(self, name: str) -> None:
-        """Delete project by name.
-        :param name: The name of the project to delete.
-        """
-        project = self.get_by_name(name)
+    async def delete_project(self, name: str) -> None:
+        """Delete project by name asynchronously."""
+        project = await self.get_by_name(name)
         if not project:
             raise ProjectNotFoundError(f"Project with name '{name}' not found.")
-        self.delete(project)
+        await self.delete(project)
 
-    def get_all_projects(self) -> List[ProjectModel]:
-        """Get all projects.
-        :return: List of all ProjectModel instances.
-        """
-        return self.get_all()
+    async def get_all_projects(self) -> List[ProjectModel]:
+        """Get all projects asynchronously."""
+        return await self.get_all()

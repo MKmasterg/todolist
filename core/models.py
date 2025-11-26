@@ -21,10 +21,11 @@ class Status:
 
 class Task:
     """Represents a task with title, description, status, and deadline."""
-    task_count = 0
 
     def __init__(self, title: str, description: str = "", status: str = Status.TODO,
-                 deadline: Optional[datetime | str] = None):
+                 deadline: Optional[datetime | str] = None, id: Optional[int] = None, 
+                 project_id: Optional[int] = None,
+                 created_at: Optional[datetime] = None, updated_at: Optional[datetime] = None):
         """
         Initialize a new Task instance.
 
@@ -32,17 +33,23 @@ class Task:
         :param description: Task description (max 150 words)
         :param status: Task status (todo, doing, or done) - defaults to 'todo'
         :param deadline: Optional task deadline
+        :param id: Optional database ID (for internal use)
+        :param project_id: Optional project ID
+        :param created_at: Optional creation timestamp
+        :param updated_at: Optional update timestamp
         """
-        if Task.task_count >= MAX_NUMBER_OF_TASK:
-            raise MaxTasksReachedError(
-                f"Cannot create more tasks. Maximum limit of {MAX_NUMBER_OF_TASK} reached.")
         
         self.uuid = tiny_id()
         self.title = title
         self.description = description
         self.status = status
         self.deadline = deadline
-        Task.task_count += 1
+        # Extended fields for API response compatibility
+        self.id = id
+        self.project_id = project_id
+        self.created_at = created_at
+        self.updated_at = updated_at
+
 
     def get_uuid(self) -> str:
         """
@@ -119,16 +126,14 @@ class Task:
 
 
 class Project:
-    project_count = 0
 
-    def __init__(self, name: str, description: str = ""):
-        if Project.project_count >= MAX_NUMBER_OF_PROJECT:
-            raise MaxProjectsReachedError(
-                f"Cannot create more projects. Maximum limit of {MAX_NUMBER_OF_PROJECT} reached.")
-
+    def __init__(self, name: str, description: str = "", id: Optional[int] = None,
+                 created_at: Optional[datetime] = None, updated_at: Optional[datetime] = None):
         self.name = name
         self.description = description
-        Project.project_count += 1
+        self.id = id
+        self.created_at = created_at
+        self.updated_at = updated_at
 
     def get_name(self) -> str:
         """

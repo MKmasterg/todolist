@@ -1,5 +1,5 @@
 from typing import Optional, List
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from core.models import Project
 from data.repositories.project_repository import ProjectRepository
 from core.validators.project_validators import (
@@ -9,48 +9,74 @@ from core.validators.project_validators import (
 from core.exceptions import ProjectNotFoundError
 
 
-def get_project_from_name(db: Session, name: str) -> Optional[Project]:
+async def get_project_from_name(db: AsyncSession, name: str) -> Optional[Project]:
     validate_project_name(name)
     repo = ProjectRepository(db)
-    project_model = repo.get_by_name(name)
+    project_model = await repo.get_by_name(name)
     if not project_model:
         return None
-    project = Project(name=project_model.name, description=project_model.description or "")
+    project = Project(
+        name=project_model.name, 
+        description=project_model.description or "",
+        id=project_model.id,
+        created_at=project_model.created_at,
+        updated_at=project_model.updated_at
+    )
     return project
 
 
-def create_project(db: Session, name: str, desc: str) -> bool:
+async def create_project(db: AsyncSession, name: str, desc: str) -> Project:
     validate_project_name(name)
     validate_project_description(desc)
     repo = ProjectRepository(db)
-    repo.create_project(name, desc)
-    db.commit()
-    return True
+    project_model = await repo.create_project(name, desc)
+    await db.commit()
+    
+    return Project(
+        name=project_model.name,
+        description=project_model.description or "",
+        id=project_model.id,
+        created_at=project_model.created_at,
+        updated_at=project_model.updated_at
+    )
 
 
-def update_project(db: Session, old_name: str, updated_project: Project) -> bool:
+async def update_project(db: AsyncSession, old_name: str, updated_project: Project) -> Project:
     validate_project_name(old_name)
     validate_project_name(updated_project.get_name())
     validate_project_description(updated_project.get_description())
     repo = ProjectRepository(db)
-    repo.update_project(old_name, updated_project.get_name(), updated_project.get_description())
-    db.commit()
-    return True
+    project_model = await repo.update_project(old_name, updated_project.get_name(), updated_project.get_description())
+    await db.commit()
+    
+    return Project(
+        name=project_model.name,
+        description=project_model.description or "",
+        id=project_model.id,
+        created_at=project_model.created_at,
+        updated_at=project_model.updated_at
+    )
 
 
-def delete_project(db: Session, project: Project) -> bool:
+async def delete_project(db: AsyncSession, project: Project) -> bool:
     validate_project_name(project.get_name())
     repo = ProjectRepository(db)
-    repo.delete_project(project.get_name())
-    db.commit()
+    await repo.delete_project(project.get_name())
+    await db.commit()
     return True
 
 
-def get_project_list(db: Session) -> List[Project]:
+async def get_project_list(db: AsyncSession) -> List[Project]:
     repo = ProjectRepository(db)
-    project_models = repo.get_all_projects()
+    project_models = await repo.get_all_projects()
     projects = []
     for pm in project_models:
-        project = Project(name=pm.name, description=pm.description or "")
+        project = Project(
+            name=pm.name, 
+            description=pm.description or "",
+            id=pm.id,
+            created_at=pm.created_at,
+            updated_at=pm.updated_at
+        )
         projects.append(project)
     return projects

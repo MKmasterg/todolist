@@ -4,6 +4,7 @@ A todo list application for managing projects and tasks efficiently.
 
 ## Features
 
+-  **RESTful API**: Full-featured API for integration with other tools
 -  **Project Management**: Create, update, delete, and list projects
 -  **Task Management**: Add, update, delete, and list tasks within projects
 -  **Task Status Tracking**: Track tasks with three states (todo, doing, done)
@@ -22,11 +23,11 @@ A todo list application for managing projects and tasks efficiently.
 
 ### 1. Install Docker
 
-Make sure you have Docker Desktop installed on Windows. Download it from [https://www.docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop).
+Make sure you have Docker Desktop installed on Windows/Mac or Docker Engine on Linux.
 
 ### 2. Install Poetry
 
-If you don't have Poetry installed, install it by following the instructions at [https://python-poetry.org/docs/#installation](https://www.python-poetry.org/docs/#installation).
+If you don't have Poetry installed, install it by following the instructions at [https://python-poetry.org/docs/#installation](https://python-poetry.org/docs/#installation).
 
 ### 3. Clone the Repository
 
@@ -55,16 +56,17 @@ Or manually create a `.env` file with the following content:
 # Application Configuration
 MAX_NUMBER_OF_PROJECT=1000
 MAX_NUMBER_OF_TASK=10000
+PORT=8000
 
 # PostgreSQL Database Configuration
 POSTGRES_USER=todolist
-POSTGRES_PASSWORD=todolist123
+POSTGRES_PASSWORD=[REDACTED:password]
 POSTGRES_DB=todolist_db
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
 
 # Database URL
-DATABASE_URL=postgresql://todolist:todolist123@localhost:5432/todolist_db
+DATABASE_URL=postgresql+asyncpg://todolist:todolist123@localhost:5432/todolist_db
 ```
 
 ### 6. Start PostgreSQL with Docker Compose
@@ -82,87 +84,87 @@ poetry run alembic upgrade head
 ```
 
 This will create the necessary database tables.
+
 ## Running the Application
 
-### Using Poetry
+### API Server (Recommended)
+
+To start the RESTful API server:
+
+```bash
+poetry run python api_main.py
+```
+
+The API will be available at `http://localhost:8000` (or the port specified in your `.env`).
+
+**Interactive Documentation:**
+Once the server is running, you can access the interactive API documentation at:
+- Swagger UI: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
+
+### Background Scheduler
+
+Run the scheduler in the background to automatically close overdue tasks:
+
+```bash
+# Default: runs every 15 minutes
+poetry run python scheduler.py
+
+# Custom interval (in minutes)
+poetry run python scheduler.py --interval 30
+```
+
+Note: The scheduler runs an initial check immediately upon starting.
+
+### Manual Trigger (Legacy CLI)
+
+You can also trigger the auto-close background job from within the legacy CLI:
+
+```
+> tasks:autoclose-overdue
+```
+
+### Legacy CLI (Deprecated)
+
+The command-line interface is deprecated and will be removed in future versions.
 
 ```bash
 poetry run python main.py
 ```
-## Usage
 
-> **⚠️ CLI Deprecation Notice:**
-> The command-line interface (CLI) is deprecated and will be removed in future versions. Please use the RESTful API for all interactions. See below for API usage instructions.
+## API Usage
 
+All API endpoints are prefixed with `/api/v1`.
 
-Once the application starts, you'll see a welcome message and a command prompt (`>`). Here are the available commands:
+### Projects
 
-### Project Commands
+- `GET /api/v1/projects/`: List all projects
+- `POST /api/v1/projects/`: Create a new project
+- `GET /api/v1/projects/{project_name}`: Get project details
+- `PUT /api/v1/projects/{project_name}`: Update a project
+- `DELETE /api/v1/projects/{project_name}`: Delete a project
 
-**List all projects:**
-```
-get projects
-```
+### Tasks
 
-**Add a new project:**
-```
-add project
-```
-You'll be prompted to enter:
-- Project name (max 30 characters)
-- Project description (max 150 characters)
+- `GET /api/v1/projects/{project_name}/tasks/`: List tasks in a project
+- `POST /api/v1/projects/{project_name}/tasks/`: Create a new task
+- `GET /api/v1/projects/{project_name}/tasks/{task_uuid}`: Get task details
+- `PUT /api/v1/projects/{project_name}/tasks/{task_uuid}`: Update a task
+- `DELETE /api/v1/projects/{project_name}/tasks/{task_uuid}`: Delete a task
 
-**Update a project:**
-```
-update project "<project-name>"
-```
-You'll be prompted to enter new values for:
-- Project name (leave blank to keep unchanged)
-- Project description (leave blank to keep unchanged)
+## Configuration Options
 
-**Delete a project:**
-```
-delete project "<project-name>"
-```
+You can configure the application variables in your `.env` file:
 
-### Task Commands
-
-**List all tasks in a project:**
-```
-get tasks "<project-name>"
-```
-
-**Add a new task:**
-```
-add task
-```
-You'll be prompted to enter:
-- Project name to add the task to
-- Task title (max 30 characters)
-- Task description (max 150 characters)
-- Task status (todo, doing, or done) - default: todo
-- Task deadline (YYYY-MM-DD format, optional)
-
-**Update a task:**
-```
-update task "<project-name>" <task-id>
-```
-You'll be prompted to update:
-- Task title (leave blank to keep unchanged)
-- Task description (leave blank to keep unchanged)
-- Task status (leave blank to keep unchanged)
-- Task deadline (leave blank to keep unchanged)
-
-**Update only a task's status:**
-```
-update task_status "<project-name>" <task-id> <new-status>
-```
-Where `<new-status>` is one of: `todo`, `doing`, or `done`
-
-**Delete a task:**
-```
-delete task "<project-name>" <task-id>
-```
+- `MAX_NUMBER_OF_PROJECT`: Maximum number of projects (default: 1000)
+- `MAX_NUMBER_OF_TASK`: Maximum number of tasks (default: 10000)
+- `PORT`: Port for the API server (default: 8000)
+- `POSTGRES_USER`: PostgreSQL username
+- `POSTGRES_PASSWORD`: PostgreSQL password
+- `POSTGRES_DB`: PostgreSQL database name
+- `POSTGRES_HOST`: PostgreSQL host (default: localhost)
+- `POSTGRES_PORT`: PostgreSQL port (default: 5432)
+- `DATABASE_URL`: Full database connection URL
 
 ## Project Structure
 
@@ -173,61 +175,26 @@ todolist/
 │   ├── models.py       # Domain models (Project, Task, Status)
 │   ├── services.py     # Business logic services
 │   └── validators/     # Input validators
-│       ├── project_validators.py
-│       └── task_validators.py
 ├── data/               # Data layer
 │   ├── database.py     # Database connection and session management
 │   ├── env_loader.py   # Environment configuration
 │   ├── models/         # SQLAlchemy ORM models
-│   │   ├── project_model.py
-│   │   └── task_model.py
 │   ├── repositories/   # Data access layer
-│   │   ├── base.py
-│   │   ├── project_repository.py
-│   │   └── task_repository.py
 │   └── migrations/     # Alembic database migrations
-│       └── versions/
 ├── interface/          # User interface layer
-│   ├── arg_parser.py   # Command argument parser
-│   └── cli.py          # CLI command handlers
+│   ├── api/            # RESTful API
+│   │   ├── controller_schemas/  # Pydantic schemas for requests/responses
+│   │   ├── controllers/         # API controllers
+│   │   └── routers.py           # API route definitions
+│   └── cli/            # Command-line interface (deprecated)
 ├── utils/              # Utility functions
-│   └── id_generator.py # Unique ID generation
-├── main.py             # Application entry point
+├── api_main.py         # API entry point
+├── main.py             # Legacy CLI entry point
+├── scheduler.py        # Background scheduler entry point
 ├── pyproject.toml      # Poetry configuration
 ├── alembic.ini         # Alembic configuration
 └── docker-compose.yml  # Docker Compose for PostgreSQL
 ```
-
-## Configuration
-
-You can configure the application by creating a `.env` file in the root directory:
-
-```env
-# Application Configuration
-MAX_NUMBER_OF_PROJECT=1000
-MAX_NUMBER_OF_TASK=10000
-
-# PostgreSQL Database Configuration
-POSTGRES_USER=todolist
-POSTGRES_PASSWORD=todolist123
-POSTGRES_DB=todolist_db
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
-
-# Database URL
-DATABASE_URL=postgresql://todolist:todolist123@localhost:5432/todolist_db
-```
-
-### Configuration Options
-
-- `MAX_NUMBER_OF_PROJECT`: Maximum number of projects (default: 1000)
-- `MAX_NUMBER_OF_TASK`: Maximum number of tasks (default: 10000)
-- `POSTGRES_USER`: PostgreSQL username
-- `POSTGRES_PASSWORD`: PostgreSQL password
-- `POSTGRES_DB`: PostgreSQL database name
-- `POSTGRES_HOST`: PostgreSQL host (default: localhost)
-- `POSTGRES_PORT`: PostgreSQL port (default: 5432)
-- `DATABASE_URL`: Full database connection URL
 
 ## Development
 
@@ -251,46 +218,21 @@ Rollback last migration:
 poetry run alembic downgrade -1
 ```
 
-### Adding New Dependencies
+### Managing Dependencies
 
+Add a new dependency:
 ```bash
 poetry add <package-name>
 ```
 
-### Adding Development Dependencies
-
+Add a development dependency:
 ```bash
 poetry add --group dev <package-name>
 ```
 
-### Updating Dependencies
-
+Update dependencies:
 ```bash
 poetry update
-```
-
-## Background Scheduler
-
-The application includes a background scheduler that automatically closes overdue tasks.
-
-### Quick Start
-
-Run the scheduler in the background:
-
-```bash
-# Default: runs every 15 minutes
-poetry run python scheduler.py
-
-# Custom interval (in minutes)
-poetry run python scheduler.py --interval 30
-```
-
-### Manual Trigger
-
-You can also manually trigger the auto-close job from the CLI:
-
-```
-> tasks:autoclose-overdue
 ```
 
 ## License
