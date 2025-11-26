@@ -11,6 +11,7 @@ load_dotenv(dotenv_path=env_path)
 # Load constants from environment
 MAX_NUMBER_OF_PROJECT = int(os.getenv('MAX_NUMBER_OF_PROJECT', 1000))
 MAX_NUMBER_OF_TASK = int(os.getenv('MAX_NUMBER_OF_TASK', 10000))
+PORT = int(os.getenv('PORT', 8000))
 
 # Load database configuration
 DATABASE_URL = os.getenv(
