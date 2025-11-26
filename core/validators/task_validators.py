@@ -68,10 +68,6 @@ def validate_task_deadline(deadline: datetime | str) -> Optional[datetime]:
     if dt_val < now:
         raise InvalidTaskDeadlineError("Task deadline must be a future date.")
     
-    # Convert timezone-aware datetime to naive (UTC-based) if necessary, 
-    # because the DB column is likely TIMESTAMP WITHOUT TIME ZONE.
-    # Postgres/asyncpg will complain if we pass an aware datetime to a naive column 
-    # in some contexts or if it tries to perform arithmetic with mixed types.
     if dt_val.tzinfo is not None and dt_val.tzinfo.utcoffset(dt_val) is not None:
         # Convert to UTC and strip timezone info to make it naive
         dt_val = dt_val.astimezone(dt_module.timezone.utc).replace(tzinfo=None)
