@@ -31,7 +31,11 @@ async def get_task_by_uuid_in_project(db: AsyncSession, project_name: str, task_
         title=task_model.title,
         description=task_desc,
         status=task_model.status,
-        deadline=task_model.deadline
+        deadline=task_model.deadline,
+        id=task_model.uuid,
+        project_id=task_model.project_id,
+        created_at=task_model.created_at,
+        updated_at=task_model.updated_at
     )
     task.uuid = str(task_model.uuid)
     return task
@@ -45,7 +49,7 @@ async def add_task_to_project(db: AsyncSession, project: Project, title: str, de
     validate_task_description(description)
     validate_task_status(status)
     if deadline is not None:
-        validate_task_deadline(deadline)
+        deadline = validate_task_deadline(deadline)
     project_repo = ProjectRepository(db)
     project_model = await project_repo.get_by_name(project.get_name())
     if not project_model:
@@ -66,7 +70,11 @@ async def add_task_to_project(db: AsyncSession, project: Project, title: str, de
         title=task_model.title,
         description=task_desc,
         status=task_model.status,
-        deadline=task_model.deadline
+        deadline=task_model.deadline,
+        id=task_model.uuid,
+        project_id=task_model.project_id,
+        created_at=task_model.created_at,
+        updated_at=task_model.updated_at
     )
     task.uuid = str(task_model.uuid)
     return task
@@ -99,15 +107,15 @@ async def update_task_status(db: AsyncSession, project: Project, task_uuid: str,
 
 
 async def update_task_elements(db: AsyncSession, project: Project, task_uuid: str, new_title: str, 
-                         new_description: str = "", new_status: str = Status.TODO, 
-                         new_deadline: Optional[datetime] = None) -> bool:
+                          new_description: str = "", new_status: str = Status.TODO, 
+                          new_deadline: Optional[datetime] = None) -> Task:
     validate_project_name = lambda name: None
     validate_project_name(project.get_name())
     validate_task_title(new_title)
     validate_task_description(new_description)
     validate_task_status(new_status)
     if new_deadline is not None:
-        validate_task_deadline(new_deadline)
+        new_deadline = validate_task_deadline(new_deadline)
     project_repo = ProjectRepository(db)
     project_model = await project_repo.get_by_name(project.get_name())
     if not project_model:
@@ -118,7 +126,8 @@ async def update_task_elements(db: AsyncSession, project: Project, task_uuid: st
         raise TaskNotFoundError(f"Task with uuid '{task_uuid}' not found.")    
     if task_model.project_id != project_model.id:
         raise TaskNotFoundError(f"Task with uuid '{task_uuid}' not found in project '{project.get_name()}'.")
-    await task_repo.update_task(
+    
+    task_model = await task_repo.update_task(
         uuid=task_uuid,
         title=new_title,
         description=new_description,
@@ -126,7 +135,20 @@ async def update_task_elements(db: AsyncSession, project: Project, task_uuid: st
         deadline=new_deadline
     )
     await db.commit()
-    return True
+    
+    task_desc = task_model.description if task_model.description is not None else ""
+    task = Task(
+        title=task_model.title,
+        description=task_desc,
+        status=task_model.status,
+        deadline=task_model.deadline,
+        id=task_model.uuid,
+        project_id=task_model.project_id,
+        created_at=task_model.created_at,
+        updated_at=task_model.updated_at
+    )
+    task.uuid = str(task_model.uuid)
+    return task
 
 
 async def delete_task_from_project(db: AsyncSession, project: Project, task_uuid: str) -> bool:
@@ -163,7 +185,11 @@ async def get_project_tasks(db: AsyncSession, project: Project) -> List[Task]:
             title=tm.title,
             description=task_desc,
             status=tm.status,
-            deadline=tm.deadline
+            deadline=tm.deadline,
+            id=tm.uuid,
+            project_id=tm.project_id,
+            created_at=tm.created_at,
+            updated_at=tm.updated_at
         )
         task.uuid = str(tm.uuid)
         tasks.append(task)

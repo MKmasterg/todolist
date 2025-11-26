@@ -9,7 +9,6 @@ from core.validators.task_validators import (
 )
 
 class TaskCreateRequest(BaseModel):
-    project_id: int
     title: str
     description: Optional[str] = None
     status: Optional[str] = "todo"
@@ -46,7 +45,6 @@ class TaskUpdateRequest(BaseModel):
     description: Optional[str] = None
     status: Optional[str] = None
     deadline: Optional[Union[datetime, str]] = None
-    project_id: Optional[int] = None
 
     @field_validator('title')
     @classmethod

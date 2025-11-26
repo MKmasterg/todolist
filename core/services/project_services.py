@@ -15,27 +15,47 @@ async def get_project_from_name(db: AsyncSession, name: str) -> Optional[Project
     project_model = await repo.get_by_name(name)
     if not project_model:
         return None
-    project = Project(name=project_model.name, description=project_model.description or "")
+    project = Project(
+        name=project_model.name, 
+        description=project_model.description or "",
+        id=project_model.id,
+        created_at=project_model.created_at,
+        updated_at=project_model.updated_at
+    )
     return project
 
 
-async def create_project(db: AsyncSession, name: str, desc: str) -> bool:
+async def create_project(db: AsyncSession, name: str, desc: str) -> Project:
     validate_project_name(name)
     validate_project_description(desc)
     repo = ProjectRepository(db)
-    await repo.create_project(name, desc)
+    project_model = await repo.create_project(name, desc)
     await db.commit()
-    return True
+    
+    return Project(
+        name=project_model.name,
+        description=project_model.description or "",
+        id=project_model.id,
+        created_at=project_model.created_at,
+        updated_at=project_model.updated_at
+    )
 
 
-async def update_project(db: AsyncSession, old_name: str, updated_project: Project) -> bool:
+async def update_project(db: AsyncSession, old_name: str, updated_project: Project) -> Project:
     validate_project_name(old_name)
     validate_project_name(updated_project.get_name())
     validate_project_description(updated_project.get_description())
     repo = ProjectRepository(db)
-    await repo.update_project(old_name, updated_project.get_name(), updated_project.get_description())
+    project_model = await repo.update_project(old_name, updated_project.get_name(), updated_project.get_description())
     await db.commit()
-    return True
+    
+    return Project(
+        name=project_model.name,
+        description=project_model.description or "",
+        id=project_model.id,
+        created_at=project_model.created_at,
+        updated_at=project_model.updated_at
+    )
 
 
 async def delete_project(db: AsyncSession, project: Project) -> bool:
@@ -51,6 +71,12 @@ async def get_project_list(db: AsyncSession) -> List[Project]:
     project_models = await repo.get_all_projects()
     projects = []
     for pm in project_models:
-        project = Project(name=pm.name, description=pm.description or "")
+        project = Project(
+            name=pm.name, 
+            description=pm.description or "",
+            id=pm.id,
+            created_at=pm.created_at,
+            updated_at=pm.updated_at
+        )
         projects.append(project)
     return projects

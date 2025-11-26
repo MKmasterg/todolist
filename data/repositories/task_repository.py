@@ -16,8 +16,12 @@ class TaskRepository(BaseRepository[TaskModel]):
 
     async def get_by_uuid(self, uuid: str) -> Optional[TaskModel]:
         """Get task by UUID asynchronously."""
-        result = await self.db.execute(select(TaskModel).where(TaskModel.uuid == uuid))
-        return result.scalars().first()
+        try:
+            result = await self.db.execute(select(TaskModel).where(TaskModel.uuid == uuid))
+            return result.scalars().first()
+        except Exception:
+            # If the UUID is invalid (malformed), return None as if not found
+            return None
 
     async def get_tasks_by_project(self, project_id: int) -> List[TaskModel]:
         """Get all tasks for a project asynchronously."""

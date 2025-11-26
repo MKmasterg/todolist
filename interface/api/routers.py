@@ -3,7 +3,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
 from data.database import get_db
-from interface.api.controller_schemas import requests, responses as schemas
+from interface.api.controller_schemas.requests.project_request_schema import ProjectCreateRequest, ProjectUpdateRequest
+from interface.api.controller_schemas.responses.project_response_schema import ProjectResponse
+from interface.api.controller_schemas.requests.task_request_schema import TaskCreateRequest, TaskUpdateRequest
+from interface.api.controller_schemas.responses.task_response_schema import TaskResponse
+
 from core.services import project_services, task_services
 from core.models import Project
 from core.exceptions import (
@@ -17,7 +21,7 @@ router = APIRouter()
 
 # --- Projects ---
 
-@router.get("/projects/", response_model=List[schemas.ProjectResponse])
+@router.get("/projects/", response_model=List[ProjectResponse])
 async def read_projects(db: AsyncSession = Depends(get_db)):
     """
     Retrieve a list of all projects.
@@ -28,13 +32,13 @@ async def read_projects(db: AsyncSession = Depends(get_db)):
     projects = await project_services.get_project_list(db)
     return projects
 
-@router.post("/projects/", response_model=schemas.ProjectResponse, status_code=status.HTTP_201_CREATED)
-async def create_project(project: schemas.ProjectCreate, db: AsyncSession = Depends(get_db)):
+@router.post("/projects/", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
+async def create_project(project_req: ProjectCreateRequest, db: AsyncSession = Depends(get_db)):
     """
     Create a new project.
     
     Args:
-        project (ProjectCreate): The project creation data.
+        project_req (ProjectCreateRequest): The project creation data.
         db (AsyncSession): Database session.
         
     Returns:
@@ -44,9 +48,8 @@ async def create_project(project: schemas.ProjectCreate, db: AsyncSession = Depe
         HTTPException: If project limit reached or validation fails.
     """
     try:
-        await project_services.create_project(db, project.name, project.description)
-        # Return the created project object
-        return schemas.ProjectResponse(name=project.name, description=project.description)
+        created_project = await project_services.create_project(db, project_req.name, project_req.description or "")
+        return created_project
     except MaxProjectsReachedError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except ValueError as e: # For validation errors
@@ -54,7 +57,7 @@ async def create_project(project: schemas.ProjectCreate, db: AsyncSession = Depe
     except Exception as e:
          raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-@router.get("/projects/{project_name}", response_model=schemas.ProjectResponse)
+@router.get("/projects/{project_name}", response_model=ProjectResponse)
 async def read_project(project_name: str, db: AsyncSession = Depends(get_db)):
     """
     Retrieve a specific project by name.
@@ -77,14 +80,14 @@ async def read_project(project_name: str, db: AsyncSession = Depends(get_db)):
     except ValueError as e:
          raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-@router.put("/projects/{project_name}", response_model=schemas.ProjectResponse)
-async def update_project(project_name: str, project_update: schemas.ProjectUpdate, db: AsyncSession = Depends(get_db)):
+@router.put("/projects/{project_name}", response_model=ProjectResponse)
+async def update_project(project_name: str, project_update: ProjectUpdateRequest, db: AsyncSession = Depends(get_db)):
     """
-    Update a project's description.
+    Update a project's details.
     
     Args:
         project_name (str): The name of the project to update.
-        project_update (ProjectUpdate): The new project data (only description for now).
+        project_update (ProjectUpdateRequest): The new project data.
         db (AsyncSession): Database session.
         
     Returns:
@@ -101,13 +104,14 @@ async def update_project(project_name: str, project_update: schemas.ProjectUpdat
         
         # Determine new values (keep old if not provided)
         new_description = project_update.description if project_update.description is not None else existing_project.description
-        # Note: schemas.ProjectUpdate doesn't allow changing name currently, based on the current business logic. 
-
-        updated_project_model = Project(name=project_name, description=new_description)
+        new_name = project_update.name if project_update.name is not None else project_name
         
-        await project_services.update_project(db, project_name, updated_project_model)
+        # Logic for rename is more complex as it changes URL resource, but let's support it via service
+        updated_project_model = Project(name=new_name, description=new_description)
         
-        return schemas.ProjectResponse(name=project_name, description=new_description)
+        updated_project = await project_services.update_project(db, project_name, updated_project_model)
+        
+        return updated_project
 
     except ProjectNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
@@ -144,7 +148,7 @@ async def delete_project(project_name: str, db: AsyncSession = Depends(get_db)):
 
 # --- Tasks ---
 
-@router.get("/projects/{project_name}/tasks/", response_model=List[schemas.TaskResponse])
+@router.get("/projects/{project_name}/tasks/", response_model=List[TaskResponse])
 async def read_tasks(project_name: str, db: AsyncSession = Depends(get_db)):
     """
     Retrieve all tasks for a given project.
@@ -161,7 +165,6 @@ async def read_tasks(project_name: str, db: AsyncSession = Depends(get_db)):
     """
     try:
         # Construct a temporary project object to pass to the service
-        # The service mainly uses it for get_name()
         project = Project(name=project_name) 
         tasks = await task_services.get_project_tasks(db, project)
         return tasks
@@ -170,14 +173,14 @@ async def read_tasks(project_name: str, db: AsyncSession = Depends(get_db)):
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-@router.post("/projects/{project_name}/tasks/", response_model=schemas.TaskResponse, status_code=status.HTTP_201_CREATED)
-async def create_task(project_name: str, task: schemas.TaskCreate, db: AsyncSession = Depends(get_db)):
+@router.post("/projects/{project_name}/tasks/", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
+async def create_task(project_name: str, task_req: TaskCreateRequest, db: AsyncSession = Depends(get_db)):
     """
     Create a new task in a project.
     
     Args:
         project_name (str): The name of the project.
-        task (TaskCreate): The task creation data.
+        task_req (TaskCreateRequest): The task creation data.
         db (AsyncSession): Database session.
         
     Returns:
@@ -188,13 +191,14 @@ async def create_task(project_name: str, task: schemas.TaskCreate, db: AsyncSess
     """
     try:
         project = Project(name=project_name)
+        
         created_task = await task_services.add_task_to_project(
             db, 
             project, 
-            task.title, 
-            task.description, 
-            task.status, 
-            task.deadline
+            task_req.title, 
+            task_req.description or "", 
+            task_req.status or "todo", 
+            task_req.deadline
         )
         return created_task
     except MaxTasksReachedError as e:
@@ -204,7 +208,7 @@ async def create_task(project_name: str, task: schemas.TaskCreate, db: AsyncSess
     except ValueError as e:
          raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) 
 
-@router.get("/projects/{project_name}/tasks/{task_uuid}", response_model=schemas.TaskResponse)
+@router.get("/projects/{project_name}/tasks/{task_uuid}", response_model=TaskResponse)
 async def read_task(project_name: str, task_uuid: str, db: AsyncSession = Depends(get_db)):
     """
     Retrieve a specific task by UUID within a project.
@@ -230,15 +234,15 @@ async def read_task(project_name: str, task_uuid: str, db: AsyncSession = Depend
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-@router.put("/projects/{project_name}/tasks/{task_uuid}", response_model=schemas.TaskResponse)
-async def update_task(project_name: str, task_uuid: str, task_update: schemas.TaskUpdate, db: AsyncSession = Depends(get_db)):
+@router.put("/projects/{project_name}/tasks/{task_uuid}", response_model=TaskResponse)
+async def update_task(project_name: str, task_uuid: str, task_update: TaskUpdateRequest, db: AsyncSession = Depends(get_db)):
     """
     Update a task's details.
     
     Args:
         project_name (str): The name of the project.
         task_uuid (str): The UUID of the task.
-        task_update (TaskUpdate): The new task data (fields set to None are ignored).
+        task_update (TaskUpdateRequest): The new task data.
         db (AsyncSession): Database session.
         
     Returns:
@@ -260,7 +264,7 @@ async def update_task(project_name: str, task_uuid: str, task_update: schemas.Ta
         new_status = task_update.status if task_update.status is not None else current_task.status
         new_deadline = task_update.deadline if task_update.deadline is not None else current_task.deadline
 
-        await task_services.update_task_elements(
+        updated_task = await task_services.update_task_elements(
             db, 
             project, 
             task_uuid, 
@@ -270,14 +274,7 @@ async def update_task(project_name: str, task_uuid: str, task_update: schemas.Ta
             new_deadline
         )
         
-        # Construct response
-        return schemas.TaskResponse(
-            uuid=task_uuid,
-            title=new_title,
-            description=new_desc,
-            status=new_status,
-            deadline=new_deadline
-        )
+        return updated_task
 
     except TaskNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

@@ -1,5 +1,7 @@
+from typing import Optional
 from core.exceptions import *
 
+import datetime as dt_module
 from datetime import datetime
 
 def validate_task_title(title: str) -> bool:
@@ -39,29 +41,39 @@ def validate_task_status(status: str) -> bool:
     return True
 
 
-def validate_task_deadline(deadline: datetime | str) -> bool:
+def validate_task_deadline(deadline: datetime | str) -> Optional[datetime]:
     """Validate the task deadline to ensure it is a valid date.
     :param deadline: The task deadline to validate (can be string, datetime, or None).
-    :return: True if valid, raise an exception if invalid.
+    :return: The validated datetime object, or raise an exception if invalid.
     """
     if deadline is None:
-        return True
+        return None
 
-    now = datetime.now()
-    # If it's already a datetime object, it's valid
-    if isinstance(deadline, datetime):
-        if deadline < now:
-            raise InvalidTaskDeadlineError("Task deadline must be a future date.")
-        return True
-
-    # If it's a string, try to parse it
+    dt_val = deadline
     if isinstance(deadline, str):
         try:
-            date = datetime.fromisoformat(deadline.replace('Z', '+00:00'))
-            if date < now:
-                raise InvalidTaskDeadlineError("Task deadline must be a future date.")
-            return True
+            dt_val = datetime.fromisoformat(deadline.replace('Z', '+00:00'))
         except ValueError:
             raise InvalidTaskDeadlineError("Task deadline must be a valid date format (ISO 8601).")
 
-    raise InvalidTaskDeadlineError("Task deadline must be a valid date.")
+    if not isinstance(dt_val, datetime):
+        raise InvalidTaskDeadlineError("Task deadline must be a valid date.")
+    
+    now = datetime.now()
+    # Check if dt_val is offset-aware (has timezone info)
+    if dt_val.tzinfo is not None and dt_val.tzinfo.utcoffset(dt_val) is not None:
+        # If deadline is aware, we must compare against an aware 'now'
+        now = datetime.now().astimezone()
+    
+    if dt_val < now:
+        raise InvalidTaskDeadlineError("Task deadline must be a future date.")
+    
+    # Convert timezone-aware datetime to naive (UTC-based) if necessary, 
+    # because the DB column is likely TIMESTAMP WITHOUT TIME ZONE.
+    # Postgres/asyncpg will complain if we pass an aware datetime to a naive column 
+    # in some contexts or if it tries to perform arithmetic with mixed types.
+    if dt_val.tzinfo is not None and dt_val.tzinfo.utcoffset(dt_val) is not None:
+        # Convert to UTC and strip timezone info to make it naive
+        dt_val = dt_val.astimezone(dt_module.timezone.utc).replace(tzinfo=None)
+        
+    return dt_val
