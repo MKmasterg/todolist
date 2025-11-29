@@ -20,16 +20,8 @@ class ProjectCreateRequest(BaseModel):
         return v
 
 class ProjectUpdateRequest(BaseModel):
-    name: Optional[str] = None
     description: Optional[str] = None
-
-    @field_validator('name')
-    @classmethod
-    def validate_name(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None:
-            validate_project_name(v)
-        return v
-
+    
     @field_validator('description')
     @classmethod
     def validate_description(cls, v: Optional[str]) -> Optional[str]:

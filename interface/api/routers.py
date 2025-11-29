@@ -80,13 +80,12 @@ async def read_project(project_name: str, db: AsyncSession = Depends(get_db)):
     except ValueError as e:
          raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-@router.put("/projects/{project_name}", response_model=ProjectResponse)
+@router.patch("/projects/{project_name}", response_model=ProjectResponse)
 async def update_project(project_name: str, project_update: ProjectUpdateRequest, db: AsyncSession = Depends(get_db)):
     """
     Update a project's details.
     
     Args:
-        project_name (str): The name of the project to update.
         project_update (ProjectUpdateRequest): The new project data.
         db (AsyncSession): Database session.
         
@@ -104,10 +103,9 @@ async def update_project(project_name: str, project_update: ProjectUpdateRequest
         
         # Determine new values (keep old if not provided)
         new_description = project_update.description if project_update.description is not None else existing_project.description
-        new_name = project_update.name if project_update.name is not None else project_name
-        
+       
         # Logic for rename is more complex as it changes URL resource, but let's support it via service
-        updated_project_model = Project(name=new_name, description=new_description)
+        updated_project_model = Project(name=project_name, description=new_description)
         
         updated_project = await project_services.update_project(db, project_name, updated_project_model)
         
@@ -234,7 +232,7 @@ async def read_task(project_name: str, task_uuid: str, db: AsyncSession = Depend
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-@router.put("/projects/{project_name}/tasks/{task_uuid}", response_model=TaskResponse)
+@router.patch("/projects/{project_name}/tasks/{task_uuid}", response_model=TaskResponse)
 async def update_task(project_name: str, task_uuid: str, task_update: TaskUpdateRequest, db: AsyncSession = Depends(get_db)):
     """
     Update a task's details.
