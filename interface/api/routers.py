@@ -232,7 +232,7 @@ async def read_task(project_name: str, task_uuid: str, db: AsyncSession = Depend
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-@router.put("/projects/{project_name}/tasks/{task_uuid}", response_model=TaskResponse)
+@router.patch("/projects/{project_name}/tasks/{task_uuid}", response_model=TaskResponse)
 async def update_task(project_name: str, task_uuid: str, task_update: TaskUpdateRequest, db: AsyncSession = Depends(get_db)):
     """
     Update a task's details.
