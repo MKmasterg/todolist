@@ -80,7 +80,7 @@ async def read_project(project_name: str, db: AsyncSession = Depends(get_db)):
     except ValueError as e:
          raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-@router.put("/projects/{project_name}", response_model=ProjectResponse)
+@router.patch("/projects/{project_name}", response_model=ProjectResponse)
 async def update_project(project_name: str, project_update: ProjectUpdateRequest, db: AsyncSession = Depends(get_db)):
     """
     Update a project's details.
