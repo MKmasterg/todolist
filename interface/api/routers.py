@@ -86,7 +86,6 @@ async def update_project(project_name: str, project_update: ProjectUpdateRequest
     Update a project's details.
     
     Args:
-        project_name (str): The name of the project to update.
         project_update (ProjectUpdateRequest): The new project data.
         db (AsyncSession): Database session.
         
@@ -104,10 +103,9 @@ async def update_project(project_name: str, project_update: ProjectUpdateRequest
         
         # Determine new values (keep old if not provided)
         new_description = project_update.description if project_update.description is not None else existing_project.description
-        new_name = project_update.name if project_update.name is not None else project_name
-        
+       
         # Logic for rename is more complex as it changes URL resource, but let's support it via service
-        updated_project_model = Project(name=new_name, description=new_description)
+        updated_project_model = Project(name=project_name, description=new_description)
         
         updated_project = await project_services.update_project(db, project_name, updated_project_model)
         
