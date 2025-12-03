@@ -87,9 +87,9 @@ This will create the necessary database tables.
 
 ## Running the Application
 
-### API Server (Recommended)
+### API Server
 
-To start the RESTful API server:
+To start the fastAPI server:
 
 ```bash
 poetry run python main.py
